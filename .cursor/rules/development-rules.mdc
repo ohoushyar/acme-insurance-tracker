@@ -1,3 +1,8 @@
+---
+description: Project-wide development rules for the CRE Insurance Renewal Tracker
+alwaysApply: true
+---
+
 # Development Rules — CRE Insurance Renewal Tracker
 
 These rules govern how this project gets built. They apply to any
