@@ -30,39 +30,41 @@ export function Register() {
   }
 
   return (
-    <main className="page">
-      <p className="eyebrow">Portfolio insurance</p>
-      <h1>Create account</h1>
-      <form onSubmit={onSubmit}>
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-        />
-        <label htmlFor="password">Password</label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          minLength={8}
-        />
-        {error ? <p className="error">{error}</p> : null}
-        <button className="btn-dark" type="submit" disabled={submitting}>
-          Create account
-        </button>
-      </form>
-      <p className="muted">
-        Already have an account? <Link to="/login">Sign in</Link>
-      </p>
+    <main className="auth-page">
+      <div className="auth-card">
+        <h1>Insurance Tracker</h1>
+        <p className="lede">Create an account to track renewals</p>
+        <form onSubmit={onSubmit}>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            required
+            minLength={8}
+          />
+          {error ? <p className="error">{error}</p> : null}
+          <button className="btn-dark" type="submit" disabled={submitting}>
+            Create account
+          </button>
+        </form>
+        <p className="muted">
+          Already have an account? <Link to="/login">Sign in</Link>
+        </p>
+      </div>
     </main>
   );
 }

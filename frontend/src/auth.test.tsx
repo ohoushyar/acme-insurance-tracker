@@ -39,7 +39,7 @@ describe("auth screens", () => {
     );
     renderAt("/");
     expect(
-      await screen.findByRole("heading", { name: /sign in/i }),
+      await screen.findByRole("heading", { name: /insurance tracker/i }),
     ).toBeInTheDocument();
   });
 
@@ -174,7 +174,7 @@ describe("auth screens", () => {
     expect(await screen.findByText(/portfolio insurance/i)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /log out/i }));
     expect(
-      await screen.findByRole("heading", { name: /sign in/i }),
+      await screen.findByRole("heading", { name: /insurance tracker/i }),
     ).toBeInTheDocument();
     await waitFor(() => {
       expect(
