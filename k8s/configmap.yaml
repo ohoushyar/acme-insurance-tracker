@@ -8,3 +8,8 @@ data:
   SESSION_TTL_SECONDS: "604800"
   SESSION_COOKIE_SECURE: "true"
   LOG_LEVEL: info
+  DRAMATIQ_REDIS_URL: redis://redis:6379/2
+  S3_ENDPOINT: http://minio:9000
+  S3_BUCKET: insurance-docs
+  S3_REGION: us-east-1
+  OPENROUTER_MODEL: openai/gpt-4o-mini
