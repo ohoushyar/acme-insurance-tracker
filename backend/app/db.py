@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import (
 
 from app.models import Base
 
-RLS_STATEMENTS = [
+PROPERTIES_RLS_STATEMENTS = [
     "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE users TO app",
     "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE properties TO app",
     "ALTER TABLE properties ENABLE ROW LEVEL SECURITY",
@@ -19,6 +19,19 @@ RLS_STATEMENTS = [
         WITH CHECK (user_id = current_setting('app.user_id')::uuid)
     """,
 ]
+
+DOCUMENTS_RLS_STATEMENTS = [
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE documents TO app",
+    "ALTER TABLE documents ENABLE ROW LEVEL SECURITY",
+    "DROP POLICY IF EXISTS documents_isolation ON documents",
+    """
+    CREATE POLICY documents_isolation ON documents
+        USING (user_id = current_setting('app.user_id')::uuid)
+        WITH CHECK (user_id = current_setting('app.user_id')::uuid)
+    """,
+]
+
+RLS_STATEMENTS = PROPERTIES_RLS_STATEMENTS + DOCUMENTS_RLS_STATEMENTS
 
 
 def create_engine(database_url: str) -> AsyncEngine:
