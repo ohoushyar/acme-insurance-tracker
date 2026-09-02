@@ -196,3 +196,109 @@ input {
 .app-main h1 {
   margin-bottom: 8px;
 }
+
+.dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  margin: 20px 0 16px;
+  padding: 20px;
+  border: 1px dashed var(--rule);
+  background: #efece4;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.dropzone-active {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.job-card {
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.job-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.job-card h2 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.job-status {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.job-status-failed {
+  color: var(--urgent);
+}
+
+.extracted h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.extracted ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.extracted-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+  margin: 12px 0 0;
+}
+
+.extracted-field {
+  margin: 0;
+}
+
+.extracted-field dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.extracted-field dd {
+  margin: 2px 0 0;
+  font-family: var(--font-serif);
+}
+
+.confidence {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
