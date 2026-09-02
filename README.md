@@ -49,6 +49,15 @@ cd backend && uv run pytest
 cd frontend && npm test
 ```
 
+Lint and format checks:
+
+```bash
+cd backend && uv run ruff check app tests alembic && uv run black --check app tests alembic
+cd frontend && npm run lint && npm run format:check
+```
+
+GitHub Actions runs the same lint, tests, frontend production build, and Docker image builds on every pull request and on pushes to `main`.
+
 ## Docker Compose (API + frontend images)
 
 ```bash
