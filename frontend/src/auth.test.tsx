@@ -77,7 +77,9 @@ describe("auth screens", () => {
     await userEvent.type(screen.getByLabelText(/password/i), "correct-horse");
     await userEvent.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect(await screen.findByText(/portfolio insurance/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /your insurance portfolio/i }),
+    ).toBeInTheDocument();
     expect(screen.getByText("owner@example.com")).toBeInTheDocument();
   });
 
@@ -144,7 +146,9 @@ describe("auth screens", () => {
     await userEvent.click(
       screen.getByRole("button", { name: /create account/i }),
     );
-    expect(await screen.findByText(/portfolio insurance/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /your insurance portfolio/i }),
+    ).toBeInTheDocument();
   });
 
   it("logs out and returns to the login screen", async () => {
@@ -171,7 +175,9 @@ describe("auth screens", () => {
     });
 
     renderAt("/");
-    expect(await screen.findByText(/portfolio insurance/i)).toBeInTheDocument();
+    expect(
+      await screen.findByRole("heading", { name: /your insurance portfolio/i }),
+    ).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /log out/i }));
     expect(
       await screen.findByRole("heading", { name: /insurance tracker/i }),

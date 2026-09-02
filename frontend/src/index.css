@@ -134,3 +134,65 @@ input {
   gap: 16px;
   margin-bottom: 8px;
 }
+
+.app-shell {
+  display: flex;
+  min-height: 100%;
+}
+
+.app-nav {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  flex-shrink: 0;
+  padding: 28px 22px;
+  border-right: 1px solid var(--rule);
+  background: #e6e2d8;
+}
+
+.app-brand {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 28px;
+}
+
+.app-nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+}
+
+.app-nav-list a {
+  display: block;
+  padding: 6px 0;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.app-nav-list a[aria-current="page"] {
+  font-weight: 600;
+}
+
+.app-nav .btn-quiet {
+  margin-top: auto;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.app-main {
+  flex: 1;
+  padding: 32px 40px 40px;
+  max-width: 720px;
+}
+
+.app-main h1 {
+  margin-bottom: 8px;
+}
