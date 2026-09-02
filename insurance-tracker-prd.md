@@ -260,10 +260,13 @@ effort on the extraction pipeline and data model instead.
 - **Password reset delivery**: implies email sending is needed for
   account recovery even if renewal reminders end up in-app-only —
   worth setting up email infrastructure once, for both uses.
-- **Document storage**: uploaded PDFs need to persist per-user (for
-  re-review/audit later), which means choosing a file storage
-  approach (not just extracted JSON) as part of the auth-scoped data
-  layer in Section 7.
+- **Document storage** (decided): S3-compatible object store. MinIO
+  locally and in Kubernetes; production can point `S3_ENDPOINT` at
+  real S3 with no code change. Object key is always
+  `{user_id}/{document_id}.pdf`. Reads and writes go only through the
+  API/worker using that constructed key — never list-bucket, never
+  serve another user's prefix. Extracted JSON lives on the
+  `documents` row until review commits a Policy (build-order step 4).
 
 ## 11. Success criteria for this phase
 
