@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend lint and tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: insurance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d insurance"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://app:app@localhost:5432/insurance_test
+      ADMIN_DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/insurance_test
+      REDIS_URL: redis://localhost:6379/1
+      SESSION_TTL_SECONDS: "604800"
+      SESSION_COOKIE_SECURE: "false"
+      LOG_LEVEL: error
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          python-version: "3.12"
+          working-directory: backend
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Create app role and test database
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d insurance -f backend/scripts/init-db.sql
+      - name: Install Python dependencies
+        working-directory: backend
+        run: uv sync --frozen
+      - name: Ruff
+        working-directory: backend
+        run: uv run ruff check app tests alembic
+      - name: Black
+        working-directory: backend
+        run: uv run black --check app tests alembic
+      - name: Pytest
+        working-directory: backend
+        run: uv run pytest
+
+  frontend:
+    name: Frontend lint, tests, and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    name: Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build API image
+        run: docker build -t insurance-tracker-api ./backend
+      - name: Build frontend image
+        run: docker build -t insurance-tracker-frontend ./frontend
