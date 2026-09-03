@@ -10,8 +10,10 @@ import {
   ApiError,
   getDocument,
   listDocuments,
+  listPolicies,
   uploadDocuments,
   type DocumentJob,
+  type Policy,
 } from "../api";
 import { useAuth } from "../auth";
 import { Shell } from "../components/Shell";
@@ -39,6 +41,38 @@ function jobSummary(job: DocumentJob): {
     namedInsured: job.extracted?.named_insured ?? null,
     policyNumber: job.extracted?.policy_number ?? null,
   };
+}
+
+function locationLabels(policy: Policy): string[] {
+  return (policy.locations ?? [])
+    .map((location) => location.label)
+    .filter((label): label is string => Boolean(label));
+}
+
+function PolicyCard({ policy }: { policy: Policy }) {
+  const title =
+    policy.named_insured || policy.policy_number || "Untitled policy";
+  const places = locationLabels(policy);
+  return (
+    <article className="job-card">
+      <header className="job-card-header">
+        <h3>{title}</h3>
+        {policy.coverage_type ? (
+          <p className="job-status">{policy.coverage_type}</p>
+        ) : null}
+      </header>
+      <p className="job-summary">
+        {policy.policy_number ? <span>{policy.policy_number}</span> : null}
+        {policy.policy_number && policy.renewal_date ? " · " : null}
+        {policy.renewal_date ? <span>{policy.renewal_date}</span> : null}
+        {(policy.policy_number || policy.renewal_date) && policy.total_premium
+          ? " · "
+          : null}
+        {policy.total_premium ? <span>{policy.total_premium}</span> : null}
+      </p>
+      {places.length > 0 ? <p className="muted">{places.join(" · ")}</p> : null}
+    </article>
+  );
 }
 
 function JobCard({ job }: { job: DocumentJob }) {
@@ -83,7 +117,9 @@ function JobCard({ job }: { job: DocumentJob }) {
 export function Home() {
   const { user, loading, logout } = useAuth();
   const [jobs, setJobs] = useState<DocumentJob[]>([]);
+  const [policies, setPolicies] = useState<Policy[]>([]);
   const [error, setError] = useState("");
+  const [policyError, setPolicyError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -94,9 +130,9 @@ export function Home() {
     }
     let cancelled = false;
     void listDocuments()
-      .then((data) => {
+      .then((documents) => {
         if (!cancelled) {
-          setJobs(data.items);
+          setJobs(documents.items);
         }
       })
       .catch((err: unknown) => {
@@ -104,6 +140,17 @@ export function Home() {
           setError(
             err instanceof ApiError ? err.message : "Unable to load documents.",
           );
+        }
+      });
+    void listPolicies()
+      .then((saved) => {
+        if (!cancelled) {
+          setPolicies(saved.items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPolicyError("Unable to load saved policies.");
         }
       });
     return () => {
@@ -194,8 +241,8 @@ export function Home() {
     <Shell onLogout={logout}>
       <h1>Your insurance portfolio</h1>
       <p className="lede">
-        Drop in a policy PDF to extract structured fields. Review and confirm
-        them here; saving into the portfolio comes next.
+        Drop in a policy PDF to extract structured fields. Confirm a review to
+        save the policy into your portfolio.
       </p>
       <p className="muted">{user.email}</p>
       <label
@@ -221,15 +268,25 @@ export function Home() {
         </span>
       </label>
       {error ? <p className="error">{error}</p> : null}
-      {jobs.length === 0 ? (
+      {policyError ? <p className="error">{policyError}</p> : null}
+      {policies.length > 0 ? (
+        <section aria-label="Saved policies" className="job-list">
+          <h2>Saved policies</h2>
+          {policies.map((policy) => (
+            <PolicyCard key={policy.id} policy={policy} />
+          ))}
+        </section>
+      ) : null}
+      {jobs.length === 0 && !error ? (
         <p className="muted">No documents uploaded yet.</p>
-      ) : (
+      ) : null}
+      {jobs.length > 0 ? (
         <section aria-label="Uploaded documents" className="job-list">
           {jobs.map((job) => (
             <JobCard key={job.id} job={job} />
           ))}
         </section>
-      )}
+      ) : null}
     </Shell>
   );
 }

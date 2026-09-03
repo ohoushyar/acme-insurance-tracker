@@ -245,7 +245,15 @@ input {
   gap: 12px;
 }
 
-.job-card h2 {
+.job-list > h2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.job-card h2,
+.job-card h3 {
   font-family: var(--font-serif);
   font-size: 18px;
   font-weight: 600;

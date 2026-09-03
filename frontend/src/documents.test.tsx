@@ -42,6 +42,7 @@ function pendingJob(): DocumentJob {
     error_message: null,
     created_at: "2026-01-02T00:00:00Z",
     updated_at: "2026-01-02T00:00:00Z",
+    policy_id: null,
   };
 }
 
@@ -110,6 +111,9 @@ describe("document upload", () => {
       if (url.endsWith("/api/v1/documents/doc-1")) {
         return jsonResponse(200, completed);
       }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -167,6 +171,9 @@ describe("document upload", () => {
       if (url.endsWith("/api/v1/documents/doc-1")) {
         return jsonResponse(200, failed);
       }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -202,6 +209,9 @@ describe("document upload", () => {
             },
           ],
         });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url}`);
     });

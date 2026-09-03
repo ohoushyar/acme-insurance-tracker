@@ -81,6 +81,7 @@ function completedJob(overrides: Partial<DocumentJob> = {}): DocumentJob {
     error_message: null,
     created_at: "2026-01-02T00:00:00Z",
     updated_at: "2026-01-02T00:00:00Z",
+    policy_id: null,
     ...overrides,
   };
 }
@@ -172,6 +173,9 @@ describe("review confirm screen", () => {
       ) {
         return jsonResponse(200, { items: [stored] });
       }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -233,6 +237,9 @@ describe("review confirm screen", () => {
       ) {
         return jsonResponse(200, { items: [completedJob()] });
       }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -273,6 +280,9 @@ describe("review confirm screen", () => {
       }
       if (url.endsWith("/api/v1/documents")) {
         return jsonResponse(200, { items: [completedJob()] });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url}`);
     });

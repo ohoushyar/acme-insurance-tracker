@@ -122,10 +122,23 @@ export type DocumentJob = {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+  policy_id: string | null;
 };
 
 export type DocumentList = {
   items: DocumentJob[];
+};
+
+export type Policy = ExtractedPolicy & {
+  id: string;
+  user_id: string;
+  source_document_id: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PolicyList = {
+  items: Policy[];
 };
 
 async function readError(response: Response): Promise<ApiError> {
@@ -139,6 +152,14 @@ async function readError(response: Response): Promise<ApiError> {
 
 export function listDocuments(): Promise<DocumentList> {
   return request<DocumentList>("/api/v1/documents");
+}
+
+export function listPolicies(): Promise<PolicyList> {
+  return request<PolicyList>("/api/v1/policies");
+}
+
+export function getPolicy(id: string): Promise<Policy> {
+  return request<Policy>(`/api/v1/policies/${id}`);
 }
 
 export function getDocument(id: string): Promise<DocumentJob> {
