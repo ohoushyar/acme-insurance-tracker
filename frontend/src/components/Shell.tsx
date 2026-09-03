@@ -23,6 +23,18 @@ export function Shell({
                 Portfolio
               </Link>
             </li>
+            <li>
+              <Link
+                to="/properties"
+                aria-current={
+                  location.pathname.startsWith("/properties")
+                    ? "page"
+                    : undefined
+                }
+              >
+                Properties
+              </Link>
+            </li>
           </ul>
         </nav>
         {onLogout ? (

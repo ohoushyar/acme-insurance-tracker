@@ -417,9 +417,419 @@ async def test_confirm_persists_long_named_insured(client: AsyncClient) -> None:
 
 async def test_unknown_policy_is_404(client: AsyncClient) -> None:
     await _login(client, "owner@example.com", "correct-horse")
-    response = await client.get(f"/api/v1/policies/{uuid4()}")
+    missing_id = uuid4()
+    response = await client.get(f"/api/v1/policies/{missing_id}")
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+    deleted = await client.delete(f"/api/v1/policies/{missing_id}")
+    assert deleted.status_code == 404
+    assert deleted.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_unauthenticated_policy_writes_are_401(client: AsyncClient) -> None:
+    patched = await client.patch(
+        f"/api/v1/policies/{uuid4()}", json={"named_insured": "Harbor Cove LLC"}
+    )
+    assert patched.status_code == 401
+    assert patched.json()["error"]["code"] == "UNAUTHENTICATED"
+
+    deleted = await client.delete(f"/api/v1/policies/{uuid4()}")
+    assert deleted.status_code == 401
+    assert deleted.json()["error"]["code"] == "UNAUTHENTICATED"
+
+
+async def test_user_cannot_patch_or_delete_another_users_policy(
+    client: AsyncClient,
+) -> None:
+    settings = get_settings()
+    engine = create_async_engine(settings.admin_database_url)
+    async with engine.begin() as conn:
+        user_b = (await conn.execute(text("""
+                    INSERT INTO users (id, email, password_hash)
+                    VALUES (gen_random_uuid(), 'pol-write-b@example.com', 'x')
+                    RETURNING id
+                    """))).scalar_one()
+        doc_b = uuid4()
+        await conn.execute(
+            text("""
+                INSERT INTO documents (
+                    id, user_id, original_filename, content_type, byte_size,
+                    storage_key, status
+                )
+                VALUES (
+                    :id, :uid, 'harbor-b.pdf', 'application/pdf', 128,
+                    :key, 'reviewed'
+                )
+                """),
+            {
+                "id": doc_b,
+                "uid": user_b,
+                "key": document_storage_key(user_b, doc_b),
+            },
+        )
+    await engine.dispose()
+    policy_b = await _insert_policy(user_b, doc_b, named_insured="Fenmore Park LLC")
+
+    await _login(client, "viewer@example.com", "correct-horse")
+    patched = await client.patch(
+        f"/api/v1/policies/{policy_b}",
+        json={"named_insured": "Stolen"},
+    )
+    assert patched.status_code == 404
+    assert patched.json()["error"]["code"] == "NOT_FOUND"
+
+    deleted = await client.delete(f"/api/v1/policies/{policy_b}")
+    assert deleted.status_code == 404
+    assert deleted.json()["error"]["code"] == "NOT_FOUND"
+
+    admin = create_async_engine(settings.admin_database_url)
+    async with admin.begin() as conn:
+        named = (
+            await conn.execute(
+                text("SELECT named_insured FROM policies WHERE id = :id"),
+                {"id": policy_b},
+            )
+        ).scalar_one()
+        exists = (
+            await conn.execute(
+                text("SELECT 1 FROM policies WHERE id = :id"),
+                {"id": policy_b},
+            )
+        ).scalar_one_or_none()
+    await admin.dispose()
+    assert named == "Fenmore Park LLC"
+    assert exists == 1
+
+
+async def test_attach_other_users_property_is_404(client: AsyncClient) -> None:
+    settings = get_settings()
+    engine = create_async_engine(settings.admin_database_url)
+    async with engine.begin() as conn:
+        user_b = (await conn.execute(text("""
+                    INSERT INTO users (id, email, password_hash)
+                    VALUES (gen_random_uuid(), 'prop-b@example.com', 'x')
+                    RETURNING id
+                    """))).scalar_one()
+        prop_b = (
+            await conn.execute(
+                text("""
+                    INSERT INTO properties (id, user_id, label)
+                    VALUES (gen_random_uuid(), :uid, 'Fenmore Park')
+                    RETURNING id
+                    """),
+                {"uid": user_b},
+            )
+        ).scalar_one()
+    await engine.dispose()
+
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+
+    attached = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": [str(prop_b)]},
+    )
+    assert attached.status_code == 404
+    assert attached.json()["error"]["code"] == "NOT_FOUND"
+
+    policy = await client.get(f"/api/v1/policies/{policy_id}")
+    assert policy.status_code == 200
+    assert policy.json()["property_ids"] == []
+
+
+async def test_rls_hides_other_policy_properties_without_application_filter(
+    client: AsyncClient,
+) -> None:
+    settings = get_settings()
+    engine = create_async_engine(settings.admin_database_url)
+    async with engine.begin() as conn:
+        user_a = (await conn.execute(text("""
+                    INSERT INTO users (id, email, password_hash)
+                    VALUES (gen_random_uuid(), 'pp-rls-a@example.com', 'x')
+                    RETURNING id
+                    """))).scalar_one()
+        user_b = (await conn.execute(text("""
+                    INSERT INTO users (id, email, password_hash)
+                    VALUES (gen_random_uuid(), 'pp-rls-b@example.com', 'x')
+                    RETURNING id
+                    """))).scalar_one()
+        doc_a = uuid4()
+        doc_b = uuid4()
+        for doc_id, uid, filename in (
+            (doc_a, user_a, "harbor-a.pdf"),
+            (doc_b, user_b, "harbor-b.pdf"),
+        ):
+            await conn.execute(
+                text("""
+                    INSERT INTO documents (
+                        id, user_id, original_filename, content_type, byte_size,
+                        storage_key, status
+                    )
+                    VALUES (
+                        :id, :uid, :filename, 'application/pdf', 128,
+                        :key, 'reviewed'
+                    )
+                    """),
+                {
+                    "id": doc_id,
+                    "uid": uid,
+                    "filename": filename,
+                    "key": document_storage_key(uid, doc_id),
+                },
+            )
+            prop_id = (
+                await conn.execute(
+                    text("""
+                        INSERT INTO properties (id, user_id, label)
+                        VALUES (gen_random_uuid(), :uid, :label)
+                        RETURNING id
+                        """),
+                    {
+                        "uid": uid,
+                        "label": "Harbor Ave" if uid == user_a else "Fenmore Park",
+                    },
+                )
+            ).scalar_one()
+            policy_id = uuid4()
+            await conn.execute(
+                text("""
+                    INSERT INTO policies (
+                        id, user_id, source_document_id, named_insured,
+                        carriers, deductibles, locations, extraction_confidence
+                    )
+                    VALUES (
+                        :id, :uid, :doc_id, :named_insured,
+                        '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '{}'::jsonb
+                    )
+                    """),
+                {
+                    "id": policy_id,
+                    "uid": uid,
+                    "doc_id": doc_id,
+                    "named_insured": (
+                        "Owner A LLC" if uid == user_a else "Owner B LLC"
+                    ),
+                },
+            )
+            await conn.execute(
+                text("""
+                    INSERT INTO policy_properties (policy_id, property_id, user_id)
+                    VALUES (:policy_id, :property_id, :uid)
+                    """),
+                {"policy_id": policy_id, "property_id": prop_id, "uid": uid},
+            )
+    await engine.dispose()
+
+    app_engine = create_async_engine(settings.database_url)
+    factory = async_sessionmaker(app_engine, expire_on_commit=False)
+
+    async with factory() as session:
+        await session.execute(
+            text("SELECT set_config('app.user_id', :uid, true)"),
+            {"uid": str(user_a)},
+        )
+        rows = (
+            await session.execute(text("SELECT user_id FROM policy_properties"))
+        ).all()
+        assert {row[0] for row in rows} == {user_a}
+
+    async with factory() as session:
+        await session.execute(
+            text("SELECT set_config('app.user_id', :uid, true)"),
+            {"uid": str(user_b)},
+        )
+        result = await session.execute(text("SELECT user_id FROM policy_properties"))
+        assert [row[0] for row in result] == [user_b]
+
+    await app_engine.dispose()
+    assert client
+
+
+async def test_patch_policy_keeps_harbor_cove_deductibles(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+
+    patched = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"named_insured": "Harbor Cove HOA"},
+    )
+    assert patched.status_code == 200
+    body = patched.json()
+    assert body["named_insured"] == "Harbor Cove HOA"
+    assert body["deductibles"] == [
+        {"peril": "Named Hurricane", "amount": "3% (min $50,000)"},
+        {"peril": "All Other Perils", "amount": "$5,000 per occurrence"},
+    ]
+    assert body["locations"][1]["label"] == "Building 3"
+
+    junk = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"term_premium": "185000 approx"},
+    )
+    assert junk.status_code == 422
+    assert junk.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_delete_property_unlinks_and_leaves_the_policy(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+
+    created = await client.post(
+        "/api/v1/properties",
+        json={"label": "Harbor Cove", "address": "100 Harbor Cove Drive, Tampa, FL"},
+    )
+    assert created.status_code == 201
+    property_id = created.json()["id"]
+
+    attached = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": [property_id]},
+    )
+    assert attached.status_code == 200
+    assert attached.json()["property_ids"] == [property_id]
+
+    listed_prop = await client.get(f"/api/v1/properties/{property_id}")
+    assert listed_prop.status_code == 200
+    assert listed_prop.json()["policy_ids"] == [policy_id]
+
+    deleted = await client.delete(f"/api/v1/properties/{property_id}")
+    assert deleted.status_code == 204
+
+    missing = await client.get(f"/api/v1/properties/{property_id}")
+    assert missing.status_code == 404
+
+    policy = await client.get(f"/api/v1/policies/{policy_id}")
+    assert policy.status_code == 200
+    assert policy.json()["property_ids"] == []
+    assert policy.json()["named_insured"] == "Harbor Cove Condominium Association"
+
+
+async def test_delete_policy_leaves_the_document(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+    assert confirmed.json()["id"] == str(document_id)
+
+    deleted = await client.delete(f"/api/v1/policies/{policy_id}")
+    assert deleted.status_code == 204
+
+    missing = await client.get(f"/api/v1/policies/{policy_id}")
+    assert missing.status_code == 404
+    assert missing.json()["error"]["code"] == "NOT_FOUND"
+
+    document = await client.get(f"/api/v1/documents/{document_id}")
+    assert document.status_code == 200
+    body = document.json()
+    assert body["status"] == "reviewed"
+    assert body["extracted"]["named_insured"] == "Harbor Cove Condominium Association"
+    assert body["policy_id"] is None
+
+
+async def test_patch_omitting_property_ids_keeps_links(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+    created = await client.post("/api/v1/properties", json={"label": "Harbor Cove"})
+    property_id = created.json()["id"]
+    attached = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": [property_id]},
+    )
+    assert attached.status_code == 200
+    assert attached.json()["property_ids"] == [property_id]
+
+    renamed = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"named_insured": "Harbor Cove HOA"},
+    )
+    assert renamed.status_code == 200
+    assert renamed.json()["named_insured"] == "Harbor Cove HOA"
+    assert renamed.json()["property_ids"] == [property_id]
+
+    cleared = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": []},
+    )
+    assert cleared.status_code == 200
+    assert cleared.json()["property_ids"] == []
+
+    null_ids = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": None},
+    )
+    assert null_ids.status_code == 422
+    assert null_ids.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_reconfirm_keeps_property_ids(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    confirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=_edited_extraction(),
+    )
+    policy_id = confirmed.json()["policy_id"]
+
+    created = await client.post("/api/v1/properties", json={"label": "Harbor Cove"})
+    property_id = created.json()["id"]
+    attached = await client.patch(
+        f"/api/v1/policies/{policy_id}",
+        json={"property_ids": [property_id]},
+    )
+    assert attached.status_code == 200
+    assert attached.json()["property_ids"] == [property_id]
+
+    edited = _edited_extraction()
+    edited["named_insured"] = "Harbor Cove HOA"
+    edited["confidence"]["named_insured"] = 1.0
+    reconfirmed = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=edited,
+    )
+    assert reconfirmed.status_code == 200
+    assert reconfirmed.json()["policy_id"] == policy_id
+
+    policy = await client.get(f"/api/v1/policies/{policy_id}")
+    assert policy.status_code == 200
+    assert policy.json()["named_insured"] == "Harbor Cove HOA"
+    assert policy.json()["property_ids"] == [property_id]
 
 
 assert Policy.__tablename__ == "policies"

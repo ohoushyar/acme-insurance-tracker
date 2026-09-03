@@ -72,6 +72,9 @@ describe("auth screens", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -104,6 +107,9 @@ describe("auth screens", () => {
             message: "Email or password is incorrect.",
           },
         });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
@@ -144,6 +150,9 @@ describe("auth screens", () => {
         return jsonResponse(200, { items: [] });
       }
       if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
@@ -187,6 +196,9 @@ describe("auth screens", () => {
         return jsonResponse(200, { items: [] });
       }
       if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);

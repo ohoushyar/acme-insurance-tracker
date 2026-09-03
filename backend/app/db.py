@@ -42,8 +42,22 @@ POLICIES_RLS_STATEMENTS = [
     """,
 ]
 
+POLICY_PROPERTIES_RLS_STATEMENTS = [
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE policy_properties TO app",
+    "ALTER TABLE policy_properties ENABLE ROW LEVEL SECURITY",
+    "DROP POLICY IF EXISTS policy_properties_isolation ON policy_properties",
+    """
+    CREATE POLICY policy_properties_isolation ON policy_properties
+        USING (user_id = current_setting('app.user_id')::uuid)
+        WITH CHECK (user_id = current_setting('app.user_id')::uuid)
+    """,
+]
+
 RLS_STATEMENTS = (
-    PROPERTIES_RLS_STATEMENTS + DOCUMENTS_RLS_STATEMENTS + POLICIES_RLS_STATEMENTS
+    PROPERTIES_RLS_STATEMENTS
+    + DOCUMENTS_RLS_STATEMENTS
+    + POLICIES_RLS_STATEMENTS
+    + POLICY_PROPERTIES_RLS_STATEMENTS
 )
 
 
