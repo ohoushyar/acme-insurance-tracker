@@ -198,7 +198,9 @@ Policy
 ├── totalPremium
 ├── limitOfInsurance
 ├── coverageType               // Property | General Liability | Umbrella | Flood | etc.
-├── deductibles[]              // { peril, amount } — NOT a single value
+├── deductibles[]              // { peril, amount } — amount is a string
+                               // (percentage and narrative deductibles,
+                               // e.g. "3% (min $50,000)"), not a Decimal
 ├── propertyIds[]              // one policy may cover multiple properties
 ├── sourceDocument              // reference to the uploaded PDF (stored per-user)
 └── extractionConfidence       // per-field or overall flag for review step
@@ -265,8 +267,9 @@ effort on the extraction pipeline and data model instead.
   real S3 with no code change. Object key is always
   `{user_id}/{document_id}.pdf`. Reads and writes go only through the
   API/worker using that constructed key — never list-bucket, never
-  serve another user's prefix. Extracted JSON lives on the
-  `documents` row until review commits a Policy (build-order step 4).
+  serve another user's prefix. Review (build-order step 3) writes
+  corrected JSON and `status=reviewed` on the `documents` row. Step 4
+  inserts Policy rows from reviewed documents.
 
 ## 11. Success criteria for this phase
 
