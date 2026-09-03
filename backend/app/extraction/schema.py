@@ -5,18 +5,38 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, BeforeValidator, Field, model_validator
 
-_PAREN_MONEY = re.compile(
-    r"\((?:US\$|USD|\$)?\s*([\d,]+(?:\.\d+)?)\s*\)", re.IGNORECASE
+_MONEY = re.compile(
+    r"^(?:(?:US\$|USD|\$)\s*)?([\d,]+(?:\.\d+)?)$",
+    re.IGNORECASE,
 )
-_PREFIX_MONEY = re.compile(r"(?:US\$|USD|\$)\s*([\d,]+(?:\.\d+)?)", re.IGNORECASE)
-_PLAIN_NUMBER = re.compile(r"^\s*([\d,]+(?:\.\d+)?)\s*$")
 
 
-def parse_money_amount(value: object) -> Decimal | None:
+def blank_to_none(value: object) -> object:
+    if isinstance(value, str) and value.strip() == "":
+        return None
+    return value
+
+
+def parse_deductible_amount(value: object) -> str | None:
+    if value is None or isinstance(value, bool):
+        return None
+    if isinstance(value, str):
+        text = value.strip()
+        return text or None
+    if isinstance(value, Decimal):
+        return format(value, "f")
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        return format(Decimal(str(value)), "f")
+    raise ValueError("must be a deductible amount")
+
+
+def parse_strict_money_amount(value: object) -> Decimal | None:
     if value is None:
         return None
-    if isinstance(value, bool):
-        return None
+    if isinstance(value, (bool, list, dict)):
+        raise ValueError("must be a money amount")  # noqa: TRY004
     if isinstance(value, Decimal):
         return value
     if isinstance(value, int):
@@ -24,34 +44,46 @@ def parse_money_amount(value: object) -> Decimal | None:
     if isinstance(value, float):
         return Decimal(str(value))
     if not isinstance(value, str):
-        return None
+        raise ValueError("must be a money amount")  # noqa: TRY004
     text = value.strip()
     if not text:
         return None
-    match = (
-        _PAREN_MONEY.search(text)
-        or _PREFIX_MONEY.search(text)
-        or _PLAIN_NUMBER.fullmatch(text)
-    )
+    match = _MONEY.fullmatch(text)
     if match is None:
-        return None
+        raise ValueError("must be a money amount")
     try:
         return Decimal(match.group(1).replace(",", ""))
-    except InvalidOperation:
+    except InvalidOperation as exc:
+        raise ValueError("must be a money amount") from exc
+
+
+def parse_money_amount(value: object) -> Decimal | None:
+    if isinstance(value, bool):
         return None
+    try:
+        return parse_strict_money_amount(value)
+    except ValueError:
+        if isinstance(value, str):
+            return None
+        raise
 
 
 MoneyAmount = Annotated[Decimal | None, BeforeValidator(parse_money_amount)]
+StrictMoneyAmount = Annotated[
+    Decimal | None, BeforeValidator(parse_strict_money_amount)
+]
+OptionalStr = Annotated[str | None, BeforeValidator(blank_to_none)]
+DeductibleAmount = Annotated[str | None, BeforeValidator(parse_deductible_amount)]
 
 
 class Deductible(BaseModel):
-    peril: str | None = None
-    amount: MoneyAmount = None
+    peril: OptionalStr = None
+    amount: DeductibleAmount = None
 
 
 class Location(BaseModel):
-    label: str | None = None
-    address: str | None = None
+    label: OptionalStr = None
+    address: OptionalStr = None
 
 
 class FieldConfidence(BaseModel):
@@ -71,16 +103,16 @@ class FieldConfidence(BaseModel):
 
 
 class ExtractedPolicy(BaseModel):
-    policy_number: str | None = None
-    named_insured: str | None = None
-    broker: str | None = None
+    policy_number: OptionalStr = None
+    named_insured: OptionalStr = None
+    broker: OptionalStr = None
     effective_date: date | None = None
     renewal_date: date | None = None
     term_premium: MoneyAmount = None
     policy_fee: MoneyAmount = None
     total_premium: MoneyAmount = None
     limit_of_insurance: MoneyAmount = None
-    coverage_type: str | None = None
+    coverage_type: OptionalStr = None
     carriers: list[str] = Field(default_factory=list)
     deductibles: list[Deductible] = Field(default_factory=list)
     locations: list[Location] = Field(default_factory=list)
@@ -104,3 +136,10 @@ class ExtractedPolicy(BaseModel):
             if value is None:
                 setattr(self.confidence, name, 0)
         return self
+
+
+class ConfirmExtractedPolicy(ExtractedPolicy):
+    term_premium: StrictMoneyAmount = None
+    policy_fee: StrictMoneyAmount = None
+    total_premium: StrictMoneyAmount = None
+    limit_of_insurance: StrictMoneyAmount = None

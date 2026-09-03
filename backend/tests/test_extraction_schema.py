@@ -1,5 +1,7 @@
 from decimal import Decimal
 
+import pytest
+
 HARBOR_COVE_EXTRACTED = {
     "policy_number": "HCL-2024-4412",
     "named_insured": "Harbor Cove LLC",
@@ -81,9 +83,9 @@ def test_harbor_cove_fixture_keeps_multi_deductible_and_locations() -> None:
     assert result.carriers == ["Acme Insurance Company", "Backup Mutual"]
     assert len(result.deductibles) == 2
     assert result.deductibles[0].peril == "Wind/Hail"
-    assert result.deductibles[0].amount == Decimal("50000.00")
+    assert result.deductibles[0].amount == "50000.00"
     assert result.deductibles[1].peril == "All Other Perils"
-    assert result.deductibles[1].amount == Decimal("25000.00")
+    assert result.deductibles[1].amount == "25000.00"
     assert len(result.locations) == 2
     assert result.locations[1].label == "Building 2"
     assert "Harbor Cove Drive" in (result.locations[1].address or "")
@@ -91,22 +93,71 @@ def test_harbor_cove_fixture_keeps_multi_deductible_and_locations() -> None:
     assert result.confidence.locations == 0.87
 
 
-def test_percent_deductible_with_dollar_figure_is_coerced() -> None:
+def test_narrative_deductible_amount_is_kept_as_string() -> None:
     from app.extraction.schema import ExtractedPolicy
 
     result = ExtractedPolicy.model_validate(
         {
             "deductibles": [
                 {"peril": "Named Storm", "amount": "2% ($9620)"},
-                {"peril": "Wind/Hail", "amount": "2% ($9,620.00)"},
+                {"peril": "Named Hurricane", "amount": "3% (min $50,000)"},
                 {"peril": "All Other Perils", "amount": "$25,000"},
                 {"peril": "Flood", "amount": "2%"},
             ],
             "term_premium": "$185,000.00",
         }
     )
-    assert result.deductibles[0].amount == Decimal(9620)
-    assert result.deductibles[1].amount == Decimal("9620.00")
-    assert result.deductibles[2].amount == Decimal(25000)
-    assert result.deductibles[3].amount is None
+    assert result.deductibles[0].amount == "2% ($9620)"
+    assert result.deductibles[1].amount == "3% (min $50,000)"
+    assert result.deductibles[2].amount == "$25,000"
+    assert result.deductibles[3].amount == "2%"
     assert result.term_premium == Decimal("185000.00")
+
+
+def test_extraction_junk_premium_becomes_null_not_guessed() -> None:
+    from app.extraction.schema import ExtractedPolicy
+
+    result = ExtractedPolicy.model_validate(
+        {
+            "term_premium": "185000 approx",
+            "total_premium": "185000 (includes $1500)",
+        }
+    )
+    assert result.term_premium is None
+    assert result.total_premium is None
+
+
+def test_confirm_schema_rejects_junk_and_parenthetical_premiums() -> None:
+    from pydantic import ValidationError
+
+    from app.extraction.schema import ConfirmExtractedPolicy
+
+    ConfirmExtractedPolicy.model_validate({"term_premium": "$185,000.00"})
+    ConfirmExtractedPolicy.model_validate({"term_premium": "185000.00"})
+    ConfirmExtractedPolicy.model_validate({"term_premium": ""})
+
+    with pytest.raises(ValidationError):
+        ConfirmExtractedPolicy.model_validate({"term_premium": "185000 approx"})
+    with pytest.raises(ValidationError):
+        ConfirmExtractedPolicy.model_validate(
+            {"term_premium": "185000 (includes $1500)"}
+        )
+
+
+def test_empty_string_scalars_become_null() -> None:
+    from app.extraction.schema import ExtractedPolicy
+
+    result = ExtractedPolicy.model_validate(
+        {
+            "named_insured": "",
+            "policy_number": "  ",
+            "broker": "Northshore Risk Partners",
+            "confidence": {"named_insured": 0.9, "policy_number": 0.8, "broker": 0.7},
+        }
+    )
+    assert result.named_insured is None
+    assert result.policy_number is None
+    assert result.confidence.named_insured == 0
+    assert result.confidence.policy_number == 0
+    assert result.broker == "Northshore Risk Partners"
+    assert result.confidence.broker == 0.7
