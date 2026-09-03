@@ -182,3 +182,40 @@ this repo.
     deployed deps match local.
 - **Frontend** stays on its own toolchain (npm or equivalent via
   `package.json` / lockfile). uv is the Python manager only.
+
+## 12. Data access (repository layer)
+
+Database access is split into three layers. Do not put SQLAlchemy
+queries in routers, and do not invent a generic repository framework
+or class-based unit of work — FastAPI's `get_db` already owns the
+transaction.
+
+- **Routers / controllers** (`app/routers/`) are HTTP adapters only:
+  request/response models, cookies, status codes, and `Depends`.
+  They call services. They must not import SQLAlchemy query, DML, or
+  exception APIs (`sqlalchemy.select`, `sqlalchemy.delete`,
+  `sqlalchemy.exc`, and the like), and must not call
+  `session.execute` / `session.add` / `session.delete` or otherwise
+  load/save rows. Type-hinting `AsyncSession` from
+  `sqlalchemy.ext.asyncio` and passing that session into a service
+  is allowed.
+- **Services** (`app/services/`) own use cases: password checks,
+  not-found / conflict mapping, confirm/upload orchestration,
+  mapping ORM rows to API models. They call repositories. They must
+  not construct SQLAlchemy queries or call `session.execute`.
+- **Repositories** (`app/repositories/`) own all persistence.
+  Functions take `AsyncSession` as the first argument and return
+  ORM models, `None`, or collections. They do not raise `AppError`
+  or hash passwords. They may raise a small persistence exception
+  (e.g. duplicate email) that the service maps to `AppError`.
+- SQLAlchemy `select` / `delete` / `session.execute` / `session.add`
+  / `session.delete` belong only in `app/repositories/`, plus
+  `models.py`, `db.py`, Alembic, and tests.
+- Queue workers that load or update rows call repositories — they
+  are not HTTP adapters, but they still must not inline `select()`.
+- Enforce the per-user data boundary (Rule 7) in repository queries
+  (`user_id` filters) in addition to RLS. Do not rely on the router
+  to remember the filter.
+- A regression test must fail if a router file imports SQLAlchemy
+  query/DML/exc APIs. Write repository tests for new queries
+  (especially owned-row lookups) before the implementation.
