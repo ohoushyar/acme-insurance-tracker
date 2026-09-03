@@ -267,9 +267,11 @@ effort on the extraction pipeline and data model instead.
   real S3 with no code change. Object key is always
   `{user_id}/{document_id}.pdf`. Reads and writes go only through the
   API/worker using that constructed key — never list-bucket, never
-  serve another user's prefix. Review (build-order step 3) writes
+  serve another user's prefix.   Review (build-order step 3) writes
   corrected JSON and `status=reviewed` on the `documents` row. Step 4
-  inserts Policy rows from reviewed documents.
+  upserts a Policy row from confirm, keyed by the source document.
+  Extracted locations are stored on the policy; `propertyIds` (step 5)
+  and PolicyHistory / multi-year matching (step 8) are not filled here.
 
 ## 11. Success criteria for this phase
 
