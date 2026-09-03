@@ -51,9 +51,10 @@ async def _document_status(document_id: str) -> str:
 async def test_extract_document_actor_leaves_terminal_status(
     client: AsyncClient,
 ) -> None:
-    from app.queue.actors import extract_document
     from dramatiq import Worker
     from dramatiq.brokers.stub import StubBroker
+
+    from app.queue.actors import extract_document
 
     await client.post(
         "/api/v1/auth/register",
