@@ -5,6 +5,8 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from app.extraction.schema import ExtractedPolicy
+
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -56,7 +58,22 @@ class DocumentOut(BaseModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
+    policy_id: uuid.UUID | None = None
 
 
 class DocumentList(BaseModel):
     items: list[DocumentOut]
+
+
+class PolicyOut(ExtractedPolicy):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    source_document_id: uuid.UUID
+    created_at: datetime
+    updated_at: datetime
+
+
+class PolicyList(BaseModel):
+    items: list[PolicyOut]

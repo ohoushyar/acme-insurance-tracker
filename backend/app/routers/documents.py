@@ -16,6 +16,11 @@ from app.deps import get_current_user, get_tenant_db
 from app.errors import AppError
 from app.extraction.schema import ConfirmExtractedPolicy
 from app.models import Document
+from app.policy_mapping import (
+    document_to_out,
+    policy_ids_for_documents,
+    upsert_policy,
+)
 from app.queue.actors import extract_document
 from app.schemas import DocumentList, DocumentOut, UserOut
 from app.storage import DocumentStore, document_storage_key
@@ -104,7 +109,7 @@ async def upload_documents(
     if queued_failed:
         await set_tenant(session, str(user.id))
         await session.commit()
-    payload = [DocumentOut.model_validate(document) for document in created]
+    payload = [document_to_out(document) for document in created]
     return DocumentList(items=payload)
 
 
@@ -118,7 +123,13 @@ async def list_documents(
         .where(Document.user_id == user.id)
         .order_by(Document.created_at.desc())
     )
-    return DocumentList(items=list(result.scalars().all()))
+    documents = list(result.scalars().all())
+    policy_ids = await policy_ids_for_documents(
+        session, [item.id for item in documents]
+    )
+    return DocumentList(
+        items=[document_to_out(item, policy_ids.get(item.id)) for item in documents]
+    )
 
 
 async def _get_owned_document(
@@ -140,8 +151,10 @@ async def get_document(
     document_id: UUID,
     user: Annotated[UserOut, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
-) -> Document:
-    return await _get_owned_document(document_id, user, session)
+) -> DocumentOut:
+    document = await _get_owned_document(document_id, user, session)
+    policy_ids = await policy_ids_for_documents(session, [document.id])
+    return document_to_out(document, policy_ids.get(document.id))
 
 
 @router.get("/{document_id}/file")
@@ -170,7 +183,7 @@ async def confirm_document(
     extracted: ConfirmExtractedPolicy,
     user: Annotated[UserOut, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
-) -> Document:
+) -> DocumentOut:
     document = await _get_owned_document(document_id, user, session)
     if document.status in {"pending", "processing"}:
         raise AppError(409, "CONFLICT", "This document is still extracting.")
@@ -181,4 +194,5 @@ async def confirm_document(
     document.extracted = extracted.model_dump(mode="json")
     document.status = "reviewed"
     document.updated_at = datetime.now(UTC)
-    return document
+    policy = await upsert_policy(session, user.id, document, extracted)
+    return document_to_out(document, policy.id)

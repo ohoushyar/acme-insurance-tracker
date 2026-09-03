@@ -366,6 +366,7 @@ async def test_confirm_completed_document_persists_edits(
     assert response.status_code == 200
     body = response.json()
     assert body["status"] == "reviewed"
+    assert body["policy_id"] is not None
     assert body["extracted"]["named_insured"] == "Harbor Cove Condominium Association"
     assert body["extracted"]["carriers"] == ["ICAT", "Indian Harbor"]
     assert body["extracted"]["deductibles"] == [
@@ -377,6 +378,7 @@ async def test_confirm_completed_document_persists_edits(
     fetched = await client.get(f"/api/v1/documents/{document_id}")
     assert fetched.status_code == 200
     assert fetched.json()["status"] == "reviewed"
+    assert fetched.json()["policy_id"] == body["policy_id"]
     assert fetched.json()["extracted"]["deductibles"][0]["amount"] == "3% (min $50,000)"
 
 
@@ -395,6 +397,7 @@ async def test_reconfirm_reviewed_document_updates_extracted(
     )
     assert response.status_code == 200
     assert response.json()["status"] == "reviewed"
+    assert response.json()["policy_id"] is not None
     assert response.json()["extracted"]["named_insured"] == "Harbor Cove HOA"
 
 
