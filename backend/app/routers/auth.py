@@ -3,16 +3,13 @@ from typing import Annotated
 import structlog
 from fastapi import APIRouter, Depends, Request, Response
 from redis.asyncio import Redis
-from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import Settings, get_settings
 from app.deps import get_current_user, get_db, get_redis
-from app.errors import AppError
 from app.models import User
 from app.schemas import Credentials, UserOut
-from app.security import hash_password, verify_password
+from app.services import auth as auth_service
 from app.sessions import delete_session, new_session_token, store_session
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
@@ -57,14 +54,7 @@ async def register(
     redis: Annotated[Redis, Depends(get_redis)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> User:
-    user = User(email=body.email, password_hash=hash_password(body.password))
-    session.add(user)
-    try:
-        await session.flush()
-    except IntegrityError:
-        await session.rollback()
-        raise AppError(409, "EMAIL_TAKEN", "An account with this email already exists.")
-    await session.refresh(user)
+    user = await auth_service.register(session, body.email, body.password)
     await _issue_session(response, redis, settings, user)
     log.info("user_registered", user_id=str(user.id))
     return user
@@ -78,10 +68,7 @@ async def login(
     redis: Annotated[Redis, Depends(get_redis)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> User:
-    result = await session.execute(select(User).where(User.email == body.email))
-    user = result.scalar_one_or_none()
-    if user is None or not verify_password(user.password_hash, body.password):
-        raise AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect.")
+    user = await auth_service.login(session, body.email, body.password)
     await _issue_session(response, redis, settings, user)
     log.info("user_logged_in", user_id=str(user.id))
     return user
