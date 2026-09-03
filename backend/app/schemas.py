@@ -6,7 +6,12 @@ from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
-from app.extraction.schema import ExtractedPolicy, OptionalStr, StrictMoneyAmount
+from app.extraction.schema import (
+    ConfirmExtractedPolicy,
+    ExtractedPolicy,
+    OptionalStr,
+    StrictMoneyAmount,
+)
 
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
@@ -108,6 +113,20 @@ class PolicyOut(ExtractedPolicy):
     source_document_id: uuid.UUID
     created_at: datetime
     updated_at: datetime
+    property_ids: list[uuid.UUID] = Field(default_factory=list)
+
+
+class PolicyPatch(ConfirmExtractedPolicy):
+    property_ids: list[uuid.UUID] | None = None
+
+    @field_validator("property_ids")
+    @classmethod
+    def require_property_ids_list(
+        cls, value: list[uuid.UUID] | None
+    ) -> list[uuid.UUID]:
+        if value is None:
+            raise ValueError("must be a list of property ids")
+        return value
 
 
 class PolicyList(BaseModel):
