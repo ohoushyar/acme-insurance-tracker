@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.extraction.schema import ExtractedPolicy
-from app.models import Document, Policy
-from app.schemas import DocumentOut, PolicyOut
+from app.models import Document, Policy, PolicyProperty, Property
+from app.schemas import DocumentOut, PolicyOut, PropertyOut
 
 
 def apply_extracted(policy: Policy, extracted: ExtractedPolicy) -> None:
@@ -58,6 +58,21 @@ def policy_to_out(policy: Policy) -> PolicyOut:
     )
 
 
+def property_to_out(
+    prop: Property, policy_ids: list[UUID] | None = None
+) -> PropertyOut:
+    return PropertyOut(
+        id=prop.id,
+        user_id=prop.user_id,
+        label=prop.label,
+        address=prop.address,
+        stated_value=prop.stated_value,
+        created_at=prop.created_at,
+        updated_at=prop.updated_at,
+        policy_ids=list(policy_ids or []),
+    )
+
+
 def document_to_out(document: Document, policy_id: UUID | None = None) -> DocumentOut:
     return DocumentOut.model_validate(document).model_copy(
         update={"policy_id": policy_id}
@@ -75,6 +90,22 @@ async def policy_ids_for_documents(
         )
     )
     return {row.source_document_id: row.id for row in result}
+
+
+async def policy_ids_for_properties(
+    session: AsyncSession, property_ids: list[UUID]
+) -> dict[UUID, list[UUID]]:
+    grouped: dict[UUID, list[UUID]] = {property_id: [] for property_id in property_ids}
+    if not property_ids:
+        return grouped
+    result = await session.execute(
+        select(PolicyProperty.property_id, PolicyProperty.policy_id).where(
+            PolicyProperty.property_id.in_(property_ids)
+        )
+    )
+    for row in result:
+        grouped[row.property_id].append(row.policy_id)
+    return grouped
 
 
 async def upsert_policy(
