@@ -1,10 +1,11 @@
 import os
+from collections.abc import AsyncIterator
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 from redis.asyncio import Redis
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 os.environ.setdefault(
     "DATABASE_URL",
@@ -72,3 +73,15 @@ async def client(app) -> AsyncClient:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture
+async def db_session(app) -> AsyncIterator[AsyncSession]:
+    factory = app.state.session_factory
+    async with factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
