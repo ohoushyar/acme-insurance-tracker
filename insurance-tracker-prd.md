@@ -233,6 +233,7 @@ not a display preference.
 7. Policy detail view.
 8. Multi-year trend chart + YoY change flagging.
 9. Renewal reminders.
+10. Manual policy create (no PDF).
 
 ## 9. Design reference
 
@@ -270,8 +271,9 @@ effort on the extraction pipeline and data model instead.
   serve another user's prefix.   Review (build-order step 3) writes
   corrected JSON and `status=reviewed` on the `documents` row. Step 4
   upserts a Policy row from confirm, keyed by the source document.
-  Extracted locations are stored on the policy; `propertyIds` (step 5)
-  and PolicyHistory / multi-year matching (step 8) are not filled here.
+  Extracted locations are stored on the policy. `propertyIds` are a
+  manual attach in step 5; auto-match from locations stays a step 8
+  risk. PolicyHistory / multi-year matching is also step 8.
 
 ## 11. Success criteria for this phase
 
