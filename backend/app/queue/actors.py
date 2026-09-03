@@ -1,17 +1,15 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime
 from uuid import UUID
 
 import dramatiq
 import structlog
-from sqlalchemy import select
 
 from app.config import get_settings
 from app.db import create_engine, create_session_factory, set_tenant
-from app.models import Document
 from app.queue.broker import broker
+from app.repositories import documents as documents_repo
 from app.storage import StorageKeyError, assert_owned_storage_key, build_document_store
 
 log = structlog.get_logger("extraction")
@@ -56,17 +54,18 @@ async def _persist_status(
     try:
         async with factory() as session:
             await set_tenant(session, user_id)
-            result = await session.execute(
-                select(Document).where(Document.id == UUID(document_id))
+            doc = await documents_repo.get_for_user(
+                session, UUID(document_id), UUID(user_id)
             )
-            doc = result.scalar_one_or_none()
             if doc is None:
                 return
-            doc.status = status
-            doc.extracted = extracted
-            doc.error_code = error_code
-            doc.error_message = error_message
-            doc.updated_at = datetime.now(UTC)
+            documents_repo.persist_outcome(
+                doc,
+                status=status,
+                extracted=extracted,
+                error_code=error_code,
+                error_message=error_message,
+            )
             await session.commit()
     finally:
         await engine.dispose()
@@ -84,10 +83,9 @@ async def _run_extraction_job(document_id: str, user_id: str) -> None:
     try:
         async with factory() as session:
             await set_tenant(session, user_id)
-            result = await session.execute(
-                select(Document).where(Document.id == UUID(document_id))
+            doc = await documents_repo.get_for_user(
+                session, UUID(document_id), UUID(user_id)
             )
-            doc = result.scalar_one_or_none()
             if doc is None:
                 log.info(
                     "extraction_skipped_missing",
@@ -102,8 +100,7 @@ async def _run_extraction_job(document_id: str, user_id: str) -> None:
                     "Document storage path is invalid."
                 ) from exc
             storage_key = doc.storage_key
-            doc.status = "processing"
-            doc.updated_at = datetime.now(UTC)
+            documents_repo.mark_processing(doc)
             await session.commit()
     finally:
         await engine.dispose()

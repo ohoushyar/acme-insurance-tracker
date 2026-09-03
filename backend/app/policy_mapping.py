@@ -1,12 +1,8 @@
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.errors import AppError
 from app.extraction.schema import ExtractedPolicy
-from app.models import Document, Policy, PolicyProperty, Property
+from app.models import Document, Policy, Property
 from app.schemas import DocumentOut, PolicyOut, PropertyOut
 
 
@@ -83,105 +79,3 @@ def document_to_out(document: Document, policy_id: UUID | None = None) -> Docume
     return DocumentOut.model_validate(document).model_copy(
         update={"policy_id": policy_id}
     )
-
-
-async def policy_ids_for_documents(
-    session: AsyncSession, document_ids: list[UUID]
-) -> dict[UUID, UUID]:
-    if not document_ids:
-        return {}
-    result = await session.execute(
-        select(Policy.source_document_id, Policy.id).where(
-            Policy.source_document_id.in_(document_ids)
-        )
-    )
-    return {row.source_document_id: row.id for row in result}
-
-
-async def property_ids_for_policies(
-    session: AsyncSession, policy_ids: list[UUID]
-) -> dict[UUID, list[UUID]]:
-    grouped: dict[UUID, list[UUID]] = {policy_id: [] for policy_id in policy_ids}
-    if not policy_ids:
-        return grouped
-    result = await session.execute(
-        select(PolicyProperty.policy_id, PolicyProperty.property_id).where(
-            PolicyProperty.policy_id.in_(policy_ids)
-        )
-    )
-    for row in result:
-        grouped[row.policy_id].append(row.property_id)
-    return grouped
-
-
-async def policy_ids_for_properties(
-    session: AsyncSession, property_ids: list[UUID]
-) -> dict[UUID, list[UUID]]:
-    grouped: dict[UUID, list[UUID]] = {property_id: [] for property_id in property_ids}
-    if not property_ids:
-        return grouped
-    result = await session.execute(
-        select(PolicyProperty.property_id, PolicyProperty.policy_id).where(
-            PolicyProperty.property_id.in_(property_ids)
-        )
-    )
-    for row in result:
-        grouped[row.property_id].append(row.policy_id)
-    return grouped
-
-
-async def replace_property_links(
-    session: AsyncSession,
-    user_id: UUID,
-    policy_id: UUID,
-    property_ids: list[UUID],
-) -> None:
-    unique_ids = list(dict.fromkeys(property_ids))
-    if unique_ids:
-        result = await session.execute(
-            select(Property.id).where(
-                Property.id.in_(unique_ids),
-                Property.user_id == user_id,
-            )
-        )
-        found = set(result.scalars().all())
-        if found != set(unique_ids):
-            raise AppError(404, "NOT_FOUND", "Property not found.")
-    await session.execute(
-        delete(PolicyProperty).where(
-            PolicyProperty.policy_id == policy_id,
-            PolicyProperty.user_id == user_id,
-        )
-    )
-    for property_id in unique_ids:
-        session.add(
-            PolicyProperty(
-                policy_id=policy_id,
-                property_id=property_id,
-                user_id=user_id,
-            )
-        )
-
-
-async def upsert_policy(
-    session: AsyncSession,
-    user_id: UUID,
-    document: Document,
-    extracted: ExtractedPolicy,
-) -> Policy:
-    result = await session.execute(
-        select(Policy).where(
-            Policy.source_document_id == document.id,
-            Policy.user_id == user_id,
-        )
-    )
-    policy = result.scalar_one_or_none()
-    if policy is None:
-        policy = Policy(
-            user_id=user_id,
-            source_document_id=document.id,
-        )
-        session.add(policy)
-    apply_extracted(policy, extracted)
-    await session.flush()
-    return policy

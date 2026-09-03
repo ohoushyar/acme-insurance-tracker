@@ -190,7 +190,7 @@ async def test_enqueue_failure_marks_document_failed(client: AsyncClient) -> Non
 
     await _login(client, "owner@example.com", "correct-horse")
     with patch(
-        "app.routers.documents.extract_document.send",
+        "app.services.documents.extract_document.send",
         side_effect=ConnectionError("redis down"),
     ):
         response = await client.post(
