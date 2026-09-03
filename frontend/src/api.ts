@@ -141,6 +141,27 @@ export type PolicyList = {
   items: Policy[];
 };
 
+export type Property = {
+  id: string;
+  user_id: string;
+  label: string;
+  address: string | null;
+  stated_value: string | null;
+  created_at: string;
+  updated_at: string;
+  policy_ids: string[];
+};
+
+export type PropertyList = {
+  items: Property[];
+};
+
+export type PropertyWrite = {
+  label: string;
+  address?: string | null;
+  stated_value?: string | null;
+};
+
 async function readError(response: Response): Promise<ApiError> {
   const data = (await response.json()) as ErrorBody;
   return new ApiError(
@@ -160,6 +181,31 @@ export function listPolicies(): Promise<PolicyList> {
 
 export function getPolicy(id: string): Promise<Policy> {
   return request<Policy>(`/api/v1/policies/${id}`);
+}
+
+export function listProperties(): Promise<PropertyList> {
+  return request<PropertyList>("/api/v1/properties");
+}
+
+export function createProperty(body: PropertyWrite): Promise<Property> {
+  return request<Property>("/api/v1/properties", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+}
+
+export function updateProperty(
+  id: string,
+  body: Partial<PropertyWrite>,
+): Promise<Property> {
+  return request<Property>(`/api/v1/properties/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteProperty(id: string): Promise<void> {
+  return request<void>(`/api/v1/properties/${id}`, { method: "DELETE" });
 }
 
 export function getDocument(id: string): Promise<DocumentJob> {
