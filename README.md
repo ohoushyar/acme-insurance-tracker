@@ -1,9 +1,11 @@
 # Insurance Tracker
 
-CRE insurance renewal tracker. This repository is at **build-order step 2**:
-accounts, sessions, a user-scoped data boundary, and PDF upload/extraction.
-See [docs/plans/01-auth-foundation.md](docs/plans/01-auth-foundation.md) and
-[docs/plans/02-upload-extraction.md](docs/plans/02-upload-extraction.md).
+CRE insurance renewal tracker. This repository is at **build-order step 3**:
+accounts, sessions, a user-scoped data boundary, PDF upload/extraction, and
+an editable review/confirm screen. See
+[docs/plans/01-auth-foundation.md](docs/plans/01-auth-foundation.md),
+[docs/plans/02-upload-extraction.md](docs/plans/02-upload-extraction.md),
+and [docs/plans/03-review-confirm.md](docs/plans/03-review-confirm.md).
 
 ## Prerequisites
 
