@@ -397,3 +397,52 @@ input {
   font-size: 13px;
   cursor: pointer;
 }
+
+.btn-quiet {
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.card-actions a {
+  font-size: 13px;
+}
+
+.confirm-copy {
+  color: var(--urgent);
+  font-size: 13px;
+  margin: 8px 0 0;
+}
+
+.attach-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.attach-list label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 14px;
+}
+
+.attach-list input {
+  margin: 0;
+  width: auto;
+}

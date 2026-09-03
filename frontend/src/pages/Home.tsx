@@ -8,14 +8,18 @@ import {
 import { Link, Navigate } from "react-router-dom";
 import {
   ApiError,
+  deletePolicy,
   getDocument,
   listDocuments,
   listPolicies,
+  listProperties,
   uploadDocuments,
   type DocumentJob,
   type Policy,
+  type Property,
 } from "../api";
 import { useAuth } from "../auth";
+import { ConfirmDelete } from "../components/ConfirmDelete";
 import { Shell } from "../components/Shell";
 
 const POLL_MS = 2000;
@@ -49,10 +53,42 @@ function locationLabels(policy: Policy): string[] {
     .filter((label): label is string => Boolean(label));
 }
 
-function PolicyCard({ policy }: { policy: Policy }) {
+function attachedLabels(policy: Policy, properties: Property[]): string[] {
+  return (policy.property_ids ?? [])
+    .map((id) => properties.find((property) => property.id === id)?.label)
+    .filter((label): label is string => Boolean(label));
+}
+
+function PolicyCard({
+  policy,
+  properties,
+  onDeleted,
+}: {
+  policy: Policy;
+  properties: Property[];
+  onDeleted: (id: string) => void;
+}) {
+  const [confirming, setConfirming] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
   const title =
     policy.named_insured || policy.policy_number || "Untitled policy";
-  const places = locationLabels(policy);
+  const places = [
+    ...attachedLabels(policy, properties),
+    ...locationLabels(policy),
+  ];
+
+  async function onConfirmDelete(): Promise<void> {
+    setDeleteError("");
+    try {
+      await deletePolicy(policy.id);
+      onDeleted(policy.id);
+    } catch (err) {
+      setDeleteError(
+        err instanceof ApiError ? err.message : "Unable to delete policy.",
+      );
+    }
+  }
+
   return (
     <article className="job-card">
       <header className="job-card-header">
@@ -71,6 +107,29 @@ function PolicyCard({ policy }: { policy: Policy }) {
         {policy.total_premium ? <span>{policy.total_premium}</span> : null}
       </p>
       {places.length > 0 ? <p className="muted">{places.join(" · ")}</p> : null}
+      {deleteError ? <p className="error">{deleteError}</p> : null}
+      {confirming ? (
+        <ConfirmDelete
+          label={title}
+          warning={`Delete ${title}? The uploaded document will be kept.`}
+          onConfirm={() => void onConfirmDelete()}
+          onCancel={() => setConfirming(false)}
+        />
+      ) : (
+        <div className="card-actions">
+          <Link to={`/policies/${policy.id}/edit`} aria-label={`Edit ${title}`}>
+            Edit
+          </Link>
+          <button
+            className="btn-quiet"
+            type="button"
+            aria-label={`Delete ${title}`}
+            onClick={() => setConfirming(true)}
+          >
+            Delete
+          </button>
+        </div>
+      )}
     </article>
   );
 }
@@ -118,8 +177,10 @@ export function Home() {
   const { user, loading, logout } = useAuth();
   const [jobs, setJobs] = useState<DocumentJob[]>([]);
   const [policies, setPolicies] = useState<Policy[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [error, setError] = useState("");
   const [policyError, setPolicyError] = useState("");
+  const [propertyError, setPropertyError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -151,6 +212,17 @@ export function Home() {
       .catch(() => {
         if (!cancelled) {
           setPolicyError("Unable to load saved policies.");
+        }
+      });
+    void listProperties()
+      .then((listed) => {
+        if (!cancelled) {
+          setProperties(listed.items);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPropertyError("Unable to load properties.");
         }
       });
     return () => {
@@ -269,11 +341,21 @@ export function Home() {
       </label>
       {error ? <p className="error">{error}</p> : null}
       {policyError ? <p className="error">{policyError}</p> : null}
+      {propertyError ? <p className="error">{propertyError}</p> : null}
       {policies.length > 0 ? (
         <section aria-label="Saved policies" className="job-list">
           <h2>Saved policies</h2>
           {policies.map((policy) => (
-            <PolicyCard key={policy.id} policy={policy} />
+            <PolicyCard
+              key={policy.id}
+              policy={policy}
+              properties={properties}
+              onDeleted={(id) =>
+                setPolicies((current) =>
+                  current.filter((item) => item.id !== id),
+                )
+              }
+            />
           ))}
         </section>
       ) : null}

@@ -78,6 +78,7 @@ function savedPolicy(overrides: Partial<Policy> = {}): Policy {
     source_document_id: "doc-1",
     created_at: "2026-01-02T00:00:00Z",
     updated_at: "2026-01-02T00:00:00Z",
+    property_ids: [],
     ...extractedPolicy(),
     ...overrides,
   };
@@ -124,6 +125,9 @@ describe("saved policies", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [savedPolicy()] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url}`);
     });
 
@@ -154,6 +158,9 @@ describe("saved policies", () => {
         return jsonResponse(200, {
           items: [savedPolicy({ named_insured: "Mine LLC" })],
         });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url}`);
     });
@@ -204,6 +211,9 @@ describe("saved policies", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: policies });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -244,6 +254,9 @@ describe("saved policies", () => {
           error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
         });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url}`);
     });
 
@@ -255,5 +268,36 @@ describe("saved policies", () => {
     expect(
       screen.queryByRole("heading", { name: /saved policies/i }),
     ).not.toBeInTheDocument();
+  });
+
+  it("still lists saved policies when properties fail to load", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [savedPolicy()] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(500, {
+          error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/");
+    const section = await screen.findByRole("region", {
+      name: /saved policies/i,
+    });
+    expect(section).toHaveTextContent("Harbor Cove LLC");
+    expect(section).toHaveTextContent("Building 1");
+    expect(
+      await screen.findByText("Unable to load properties."),
+    ).toBeInTheDocument();
   });
 });

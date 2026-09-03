@@ -113,6 +113,9 @@ describe("review confirm screen", () => {
       if (url.endsWith("/api/v1/documents/doc-1")) {
         return jsonResponse(200, job);
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url}`);
     });
 
@@ -174,6 +177,9 @@ describe("review confirm screen", () => {
         return jsonResponse(200, { items: [stored] });
       }
       if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
@@ -240,6 +246,9 @@ describe("review confirm screen", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -284,6 +293,9 @@ describe("review confirm screen", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url}`);
     });
 
@@ -307,6 +319,9 @@ describe("review confirm screen", () => {
           ...completedJob(),
           extracted: { named_insured: "Harbor Cove LLC" },
         });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url}`);
     });
