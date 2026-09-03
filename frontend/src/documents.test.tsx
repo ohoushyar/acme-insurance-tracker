@@ -126,9 +126,12 @@ describe("document upload", () => {
       file,
     );
 
+    expect(
+      await screen.findByRole("link", { name: /review extracted fields/i }),
+    ).toHaveAttribute("href", "/documents/doc-1/review");
     expect(await screen.findByText("Harbor Cove LLC")).toBeInTheDocument();
-    expect(screen.getByText(/Wind\/Hail/)).toBeInTheDocument();
-    expect(screen.getByText(/Building 1/)).toBeInTheDocument();
+    expect(screen.queryByText(/Wind\/Hail/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Building 1/)).not.toBeInTheDocument();
     await waitFor(() => {
       expect(
         vi

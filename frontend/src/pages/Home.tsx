@@ -4,7 +4,6 @@ import {
   useState,
   type ChangeEvent,
   type DragEvent,
-  type ReactNode,
 } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
@@ -13,46 +12,11 @@ import {
   listDocuments,
   uploadDocuments,
   type DocumentJob,
-  type ExtractedPolicy,
 } from "../api";
 import { useAuth } from "../auth";
+import { Shell } from "../components/Shell";
 
 const POLL_MS = 2000;
-
-function Shell({
-  children,
-  onLogout,
-}: {
-  children: ReactNode;
-  onLogout?: () => void;
-}) {
-  return (
-    <div className="app-shell">
-      <aside className="app-nav">
-        <p className="app-brand">Insurance Tracker</p>
-        <nav aria-label="Main">
-          <ul className="app-nav-list">
-            <li>
-              <Link to="/" aria-current="page">
-                Portfolio
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        {onLogout ? (
-          <button
-            className="btn-quiet"
-            type="button"
-            onClick={() => void onLogout()}
-          >
-            Log out
-          </button>
-        ) : null}
-      </aside>
-      <main className="app-main">{children}</main>
-    </div>
-  );
-}
 
 function mergeJobs(
   current: DocumentJob[],
@@ -67,143 +31,21 @@ function mergeJobs(
   );
 }
 
-function formatConfidence(value: number | undefined): string {
-  if (value === undefined) {
-    return "";
-  }
-  return `${Math.round(value * 100)}%`;
-}
-
-function ScalarField({
-  label,
-  value,
-  confidence,
-}: {
-  label: string;
-  value: string | null | undefined;
-  confidence: number | undefined;
-}) {
-  return (
-    <div className="extracted-field">
-      <dt>
-        {label}
-        <span className="confidence">{formatConfidence(confidence)}</span>
-      </dt>
-      <dd>{value ?? "—"}</dd>
-    </div>
-  );
-}
-
-function ExtractedFields({ extracted }: { extracted: ExtractedPolicy }) {
-  return (
-    <div className="extracted">
-      <dl className="extracted-grid">
-        <ScalarField
-          label="Policy number"
-          value={extracted.policy_number}
-          confidence={extracted.confidence.policy_number}
-        />
-        <ScalarField
-          label="Named insured"
-          value={extracted.named_insured}
-          confidence={extracted.confidence.named_insured}
-        />
-        <ScalarField
-          label="Broker"
-          value={extracted.broker}
-          confidence={extracted.confidence.broker}
-        />
-        <ScalarField
-          label="Effective"
-          value={extracted.effective_date}
-          confidence={extracted.confidence.effective_date}
-        />
-        <ScalarField
-          label="Renewal"
-          value={extracted.renewal_date}
-          confidence={extracted.confidence.renewal_date}
-        />
-        <ScalarField
-          label="Term premium"
-          value={extracted.term_premium}
-          confidence={extracted.confidence.term_premium}
-        />
-        <ScalarField
-          label="Policy fee"
-          value={extracted.policy_fee}
-          confidence={extracted.confidence.policy_fee}
-        />
-        <ScalarField
-          label="Total premium"
-          value={extracted.total_premium}
-          confidence={extracted.confidence.total_premium}
-        />
-        <ScalarField
-          label="Limit"
-          value={extracted.limit_of_insurance}
-          confidence={extracted.confidence.limit_of_insurance}
-        />
-        <ScalarField
-          label="Coverage"
-          value={extracted.coverage_type}
-          confidence={extracted.confidence.coverage_type}
-        />
-      </dl>
-      <h3>
-        Carriers
-        <span className="confidence">
-          {formatConfidence(extracted.confidence.carriers)}
-        </span>
-      </h3>
-      {extracted.carriers.length === 0 ? (
-        <p className="muted">None extracted</p>
-      ) : (
-        <ul>
-          {extracted.carriers.map((carrier) => (
-            <li key={carrier}>{carrier}</li>
-          ))}
-        </ul>
-      )}
-      <h3>
-        Deductibles
-        <span className="confidence">
-          {formatConfidence(extracted.confidence.deductibles)}
-        </span>
-      </h3>
-      {extracted.deductibles.length === 0 ? (
-        <p className="muted">None extracted</p>
-      ) : (
-        <ul>
-          {extracted.deductibles.map((item, index) => (
-            <li key={`${item.peril ?? "peril"}-${index}`}>
-              {item.peril ?? "Peril"}: {item.amount ?? "—"}
-            </li>
-          ))}
-        </ul>
-      )}
-      <h3>
-        Locations
-        <span className="confidence">
-          {formatConfidence(extracted.confidence.locations)}
-        </span>
-      </h3>
-      {extracted.locations.length === 0 ? (
-        <p className="muted">None extracted</p>
-      ) : (
-        <ul>
-          {extracted.locations.map((item, index) => (
-            <li key={`${item.label ?? "location"}-${index}`}>
-              {item.label ?? "Location"}
-              {item.address ? ` — ${item.address}` : ""}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
+function jobSummary(job: DocumentJob): {
+  namedInsured: string | null;
+  policyNumber: string | null;
+} {
+  return {
+    namedInsured: job.extracted?.named_insured ?? null,
+    policyNumber: job.extracted?.policy_number ?? null,
+  };
 }
 
 function JobCard({ job }: { job: DocumentJob }) {
+  const canReview =
+    (job.status === "completed" || job.status === "reviewed") &&
+    job.extracted !== null;
+  const summary = jobSummary(job);
   return (
     <article className="job-card">
       <header className="job-card-header">
@@ -213,11 +55,26 @@ function JobCard({ job }: { job: DocumentJob }) {
       {job.status === "failed" ? (
         <p className="error">{job.error_message ?? "Extraction failed."}</p>
       ) : null}
-      {job.status === "completed" && job.extracted ? (
-        <ExtractedFields extracted={job.extracted} />
-      ) : null}
       {job.status === "pending" || job.status === "processing" ? (
         <p className="muted">Extracting policy fields…</p>
+      ) : null}
+      {canReview ? (
+        <>
+          {summary.namedInsured || summary.policyNumber ? (
+            <p className="job-summary">
+              {summary.namedInsured ? (
+                <span>{summary.namedInsured}</span>
+              ) : null}
+              {summary.namedInsured && summary.policyNumber ? " · " : null}
+              {summary.policyNumber ? (
+                <span>{summary.policyNumber}</span>
+              ) : null}
+            </p>
+          ) : null}
+          <Link to={`/documents/${job.id}/review`}>
+            Review extracted fields
+          </Link>
+        </>
       ) : null}
     </article>
   );
@@ -337,8 +194,8 @@ export function Home() {
     <Shell onLogout={logout}>
       <h1>Your insurance portfolio</h1>
       <p className="lede">
-        Drop in a policy PDF to extract structured fields. Confirming into the
-        portfolio comes next.
+        Drop in a policy PDF to extract structured fields. Review and confirm
+        them here; saving into the portfolio comes next.
       </p>
       <p className="muted">{user.email}</p>
       <label

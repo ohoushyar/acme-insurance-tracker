@@ -116,7 +116,7 @@ export type DocumentJob = {
   original_filename: string;
   content_type: string;
   byte_size: number;
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "processing" | "completed" | "failed" | "reviewed";
   extracted: ExtractedPolicy | null;
   error_code: string | null;
   error_message: string | null;
@@ -143,6 +143,16 @@ export function listDocuments(): Promise<DocumentList> {
 
 export function getDocument(id: string): Promise<DocumentJob> {
   return request<DocumentJob>(`/api/v1/documents/${id}`);
+}
+
+export function confirmDocument(
+  id: string,
+  extracted: ExtractedPolicy,
+): Promise<DocumentJob> {
+  return request<DocumentJob>(`/api/v1/documents/${id}/confirm`, {
+    method: "POST",
+    body: JSON.stringify(extracted),
+  });
 }
 
 export async function uploadDocuments(files: File[]): Promise<DocumentList> {
