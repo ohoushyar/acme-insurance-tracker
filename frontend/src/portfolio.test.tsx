@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AuthProvider } from "./auth";
 import { AppRoutes } from "./App";
+import type { ExtractedPolicy, Policy } from "./api";
 
 function renderAt(path: string) {
   return render(
@@ -27,6 +28,61 @@ const owner = {
   email: "owner@example.com",
   created_at: "2026-01-01T00:00:00Z",
 };
+
+function extractedPolicy(
+  overrides: Partial<ExtractedPolicy> = {},
+): ExtractedPolicy {
+  return {
+    policy_number: "HCL-2024-4412",
+    named_insured: "Harbor Cove LLC",
+    broker: "Northshore Risk Partners",
+    effective_date: "2024-01-01",
+    renewal_date: "2025-01-01",
+    term_premium: "185000.00",
+    policy_fee: "1500.00",
+    total_premium: "186500.00",
+    limit_of_insurance: "25000000.00",
+    coverage_type: "Property",
+    carriers: ["Acme Insurance Company"],
+    deductibles: [
+      { peril: "Wind/Hail", amount: "50000.00" },
+      { peril: "All Other Perils", amount: "25000.00" },
+    ],
+    locations: [
+      { label: "Building 1", address: "100 Harbor Cove Drive" },
+      { label: "Building 3", address: "120 Harbor Cove Drive" },
+    ],
+    confidence: {
+      policy_number: 0.92,
+      named_insured: 0.95,
+      broker: 0.4,
+      effective_date: 0.9,
+      renewal_date: 0.9,
+      term_premium: 0.88,
+      policy_fee: 0.7,
+      total_premium: 0.88,
+      limit_of_insurance: 0.91,
+      coverage_type: 0.85,
+      carriers: 0.9,
+      deductibles: 0.93,
+      locations: 0.87,
+    },
+    ...overrides,
+  };
+}
+
+function savedPolicy(overrides: Record<string, unknown> = {}): Policy {
+  return {
+    id: "pol-1",
+    user_id: "user-a",
+    source_document_id: "doc-1",
+    created_at: "2026-01-02T00:00:00Z",
+    updated_at: "2026-01-02T00:00:00Z",
+    property_ids: [],
+    ...extractedPolicy(),
+    ...overrides,
+  } as Policy;
+}
 
 function covePlaza(overrides: Record<string, unknown> = {}) {
   return {
@@ -103,6 +159,98 @@ describe("portfolio management", () => {
     expect(list).toHaveTextContent("25000000.00");
   });
 
+  it("attaches a property on policy edit and shows the label on Home", async () => {
+    const property = covePlaza();
+    let policies: Policy[] = [savedPolicy()];
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [property] });
+      }
+      if (url.endsWith("/api/v1/policies/pol-1") && init?.method === "PATCH") {
+        const body = JSON.parse(String(init.body)) as {
+          property_ids: string[];
+        };
+        expect(body.property_ids).toEqual(["prop-1"]);
+        const updated = savedPolicy({ property_ids: ["prop-1"] });
+        policies = [updated];
+        return jsonResponse(200, updated);
+      }
+      if (url.endsWith("/api/v1/policies/pol-1")) {
+        return jsonResponse(200, policies[0]);
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: policies });
+      }
+      throw new Error(`unexpected fetch ${url} ${init?.method}`);
+    });
+
+    renderAt("/");
+    const before = await screen.findByRole("region", {
+      name: /saved policies/i,
+    });
+    expect(before).toHaveTextContent("Harbor Cove LLC");
+    expect(before).toHaveTextContent("Building 1");
+    expect(before).not.toHaveTextContent("Cove Plaza");
+
+    await userEvent.click(
+      screen.getByRole("link", { name: /edit harbor cove llc/i }),
+    );
+    await userEvent.click(
+      await screen.findByRole("checkbox", { name: /cove plaza/i }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /save policy/i }));
+
+    const after = await screen.findByRole("region", {
+      name: /saved policies/i,
+    });
+    expect(after).toHaveTextContent("Cove Plaza");
+    expect(after).toHaveTextContent("Building 1");
+  });
+
+  it("cancels policy edit without writing", async () => {
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [covePlaza()] });
+      }
+      if (url.endsWith("/api/v1/policies/pol-1")) {
+        return jsonResponse(200, savedPolicy());
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [savedPolicy()] });
+      }
+      throw new Error(`unexpected fetch ${url} ${init?.method}`);
+    });
+
+    renderAt("/policies/pol-1/edit");
+    await userEvent.click(
+      await screen.findByRole("checkbox", { name: /cove plaza/i }),
+    );
+    await userEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
+
+    expect(
+      await screen.findByRole("heading", {
+        name: /your insurance portfolio/i,
+      }),
+    ).toBeInTheDocument();
+    expect(
+      vi.mocked(fetch).mock.calls.some((call) => call[1]?.method === "PATCH"),
+    ).toBe(false);
+  });
+
   it("deletes a property only after the second confirm click", async () => {
     const confirmSpy = vi.spyOn(window, "confirm");
     let properties = [covePlaza({ policy_ids: ["pol-1", "pol-2"] })];
@@ -151,6 +299,97 @@ describe("portfolio management", () => {
         ),
     ).toBe(true);
     confirmSpy.mockRestore();
+  });
+
+  it("deletes a policy only after the second confirm click", async () => {
+    const confirmSpy = vi.spyOn(window, "confirm");
+    let policies: Policy[] = [savedPolicy()];
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies/pol-1") && init?.method === "DELETE") {
+        policies = [];
+        return new Response(null, { status: 204 });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: policies });
+      }
+      throw new Error(`unexpected fetch ${url} ${init?.method}`);
+    });
+
+    renderAt("/");
+    const section = await screen.findByRole("region", {
+      name: /saved policies/i,
+    });
+    expect(section).toHaveTextContent("Harbor Cove LLC");
+
+    await userEvent.click(
+      screen.getByRole("button", { name: /delete harbor cove llc/i }),
+    );
+    expect(
+      vi.mocked(fetch).mock.calls.some((call) => call[1]?.method === "DELETE"),
+    ).toBe(false);
+    expect(confirmSpy).not.toHaveBeenCalled();
+
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /confirm delete harbor cove llc/i,
+      }),
+    );
+    expect(
+      screen.queryByRole("region", { name: /saved policies/i }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("Harbor Cove LLC")).not.toBeInTheDocument();
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(
+      vi
+        .mocked(fetch)
+        .mock.calls.some(
+          (call) =>
+            String(call[0]).endsWith("/api/v1/policies/pol-1") &&
+            call[1]?.method === "DELETE",
+        ),
+    ).toBe(true);
+    confirmSpy.mockRestore();
+  });
+
+  it("still shows the policy form when properties fail to load", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/policies/pol-1")) {
+        return jsonResponse(200, savedPolicy());
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(500, {
+          error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
+        });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/policies/pol-1/edit");
+    expect(
+      await screen.findByRole("heading", { name: /edit policy/i }),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/named insured/i)).toHaveValue(
+      "Harbor Cove LLC",
+    );
+    expect(screen.getByRole("button", { name: /save policy/i })).toBeEnabled();
+    expect(
+      await screen.findByText("Unable to load properties."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no properties yet/i)).not.toBeInTheDocument();
   });
 
   it("does not claim an unattached property is linked to 0 policies", async () => {

@@ -135,6 +135,7 @@ export type Policy = ExtractedPolicy & {
   source_document_id: string;
   created_at: string;
   updated_at: string;
+  property_ids: string[];
 };
 
 export type PolicyList = {
@@ -162,6 +163,10 @@ export type PropertyWrite = {
   stated_value?: string | null;
 };
 
+export type PolicyWrite = ExtractedPolicy & {
+  property_ids: string[];
+};
+
 async function readError(response: Response): Promise<ApiError> {
   const data = (await response.json()) as ErrorBody;
   return new ApiError(
@@ -181,6 +186,17 @@ export function listPolicies(): Promise<PolicyList> {
 
 export function getPolicy(id: string): Promise<Policy> {
   return request<Policy>(`/api/v1/policies/${id}`);
+}
+
+export function updatePolicy(id: string, body: PolicyWrite): Promise<Policy> {
+  return request<Policy>(`/api/v1/policies/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(body),
+  });
+}
+
+export function deletePolicy(id: string): Promise<void> {
+  return request<void>(`/api/v1/policies/${id}`, { method: "DELETE" });
 }
 
 export function listProperties(): Promise<PropertyList> {

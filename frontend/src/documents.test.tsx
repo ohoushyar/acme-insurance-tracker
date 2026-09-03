@@ -114,6 +114,9 @@ describe("document upload", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -174,6 +177,9 @@ describe("document upload", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -211,6 +217,9 @@ describe("document upload", () => {
         });
       }
       if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url}`);
