@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 from alembic import op
-from app.db import RLS_STATEMENTS
+from app.db import PROPERTIES_RLS_STATEMENTS
 
 revision: str = "0001"
 down_revision: str | Sequence[str] | None = None
@@ -48,7 +48,7 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["user_id"], ["users.id"]),
     )
     op.create_index("ix_properties_user_id", "properties", ["user_id"])
-    for statement in RLS_STATEMENTS:
+    for statement in PROPERTIES_RLS_STATEMENTS:
         op.execute(sa.text(statement))
 
 

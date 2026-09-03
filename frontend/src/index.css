@@ -196,3 +196,204 @@ input {
 .app-main h1 {
   margin-bottom: 8px;
 }
+
+.dropzone {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  margin: 20px 0 16px;
+  padding: 20px;
+  border: 1px dashed var(--rule);
+  background: #efece4;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.dropzone-active {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.job-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.job-card {
+  padding: 16px 0 8px;
+  border-top: 1px solid var(--rule);
+}
+
+.job-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.job-list > h2 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.job-card h2,
+.job-card h3 {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.job-status {
+  margin: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.job-status-failed {
+  color: var(--urgent);
+}
+
+.extracted h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 16px 0 6px;
+}
+
+.extracted ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.extracted-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 20px;
+  margin: 12px 0 0;
+}
+
+.extracted-field {
+  margin: 0;
+}
+
+.extracted-field dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.extracted-field dd {
+  margin: 2px 0 0;
+  font-family: var(--font-serif);
+}
+
+.confidence {
+  margin-left: 8px;
+  font-weight: 400;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.confidence-low {
+  color: var(--urgent);
+}
+
+.warning {
+  color: var(--urgent);
+  font-size: 13px;
+  line-height: 1.4;
+  margin: 0 0 16px;
+}
+
+.job-summary {
+  margin: 0 0 8px;
+  font-size: 14px;
+}
+
+.review-filename {
+  font-family: var(--font-serif);
+  font-size: 18px;
+  margin: 0 0 8px;
+}
+
+.review-form {
+  margin-top: 16px;
+}
+
+.review-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.review-field input {
+  margin-bottom: 0;
+}
+
+.review-fieldset {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 16px 0 0;
+  padding: 12px 0 0;
+}
+
+.review-fieldset legend {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0;
+}
+
+.review-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px 12px;
+  align-items: end;
+  margin-bottom: 12px;
+}
+
+.review-row label {
+  grid-column: span 1;
+}
+
+.review-row input {
+  margin-bottom: 0;
+}
+
+.review-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.review-actions .btn-dark {
+  flex: 1;
+}
+
+.btn-light {
+  padding: 10px 14px;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--rule);
+  font-size: 13px;
+  cursor: pointer;
+}

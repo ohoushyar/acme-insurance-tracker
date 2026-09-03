@@ -15,9 +15,14 @@ os.environ.setdefault(
     "postgresql+asyncpg://postgres:postgres@localhost:5432/insurance_test",
 )
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379/1")
+os.environ.setdefault("DRAMATIQ_REDIS_URL", "redis://localhost:6379/2")
 os.environ.setdefault("SESSION_TTL_SECONDS", "604800")
 os.environ.setdefault("SESSION_COOKIE_SECURE", "false")
 os.environ.setdefault("LOG_LEVEL", "error")
+os.environ["S3_ENDPOINT"] = ""
+os.environ.setdefault("S3_BUCKET", "insurance-docs")
+os.environ.setdefault("S3_ACCESS_KEY", "test")
+os.environ.setdefault("S3_SECRET_KEY", "test")
 
 from app.config import get_settings
 from app.db import apply_schema

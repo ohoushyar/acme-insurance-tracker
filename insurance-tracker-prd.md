@@ -198,7 +198,9 @@ Policy
 ├── totalPremium
 ├── limitOfInsurance
 ├── coverageType               // Property | General Liability | Umbrella | Flood | etc.
-├── deductibles[]              // { peril, amount } — NOT a single value
+├── deductibles[]              // { peril, amount } — amount is a string
+                               // (percentage and narrative deductibles,
+                               // e.g. "3% (min $50,000)"), not a Decimal
 ├── propertyIds[]              // one policy may cover multiple properties
 ├── sourceDocument              // reference to the uploaded PDF (stored per-user)
 └── extractionConfidence       // per-field or overall flag for review step
@@ -260,10 +262,16 @@ effort on the extraction pipeline and data model instead.
 - **Password reset delivery**: implies email sending is needed for
   account recovery even if renewal reminders end up in-app-only —
   worth setting up email infrastructure once, for both uses.
-- **Document storage**: uploaded PDFs need to persist per-user (for
-  re-review/audit later), which means choosing a file storage
-  approach (not just extracted JSON) as part of the auth-scoped data
-  layer in Section 7.
+- **Document storage** (decided): S3-compatible object store. MinIO
+  locally and in Kubernetes; production can point `S3_ENDPOINT` at
+  real S3 with no code change. Object key is always
+  `{user_id}/{document_id}.pdf`. Reads and writes go only through the
+  API/worker using that constructed key — never list-bucket, never
+  serve another user's prefix.   Review (build-order step 3) writes
+  corrected JSON and `status=reviewed` on the `documents` row. Step 4
+  upserts a Policy row from confirm, keyed by the source document.
+  Extracted locations are stored on the policy; `propertyIds` (step 5)
+  and PolicyHistory / multi-year matching (step 8) are not filled here.
 
 ## 11. Success criteria for this phase
 

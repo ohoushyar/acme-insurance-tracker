@@ -9,10 +9,18 @@ class Settings(BaseSettings):
     database_url: str
     admin_database_url: str = ""
     redis_url: str
+    dramatiq_redis_url: str = ""
     session_ttl_seconds: int = 604800
     session_cookie_secure: bool = False
     session_cookie_name: str = "session"
     log_level: str = "info"
+    s3_endpoint: str = ""
+    s3_bucket: str = "insurance-docs"
+    s3_access_key: str = ""
+    s3_secret_key: str = ""
+    s3_region: str = "us-east-1"
+    openrouter_api_key: str = ""
+    openrouter_model: str = "openai/gpt-4o-mini"
 
 
 @lru_cache

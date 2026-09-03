@@ -9,7 +9,8 @@ from app.config import Settings, get_settings
 from app.db import create_engine, create_session_factory
 from app.errors import register_exception_handlers
 from app.logging import configure_logging
-from app.routers import auth, properties
+from app.routers import auth, documents, policies, properties
+from app.storage import build_document_store
 
 
 async def init_runtime(app: FastAPI) -> None:
@@ -18,6 +19,7 @@ async def init_runtime(app: FastAPI) -> None:
     app.state.engine = engine
     app.state.session_factory = create_session_factory(engine)
     app.state.redis = Redis.from_url(settings.redis_url, decode_responses=True)
+    app.state.document_store = build_document_store(settings)
 
 
 async def close_runtime(app: FastAPI) -> None:
@@ -46,6 +48,8 @@ def create_app() -> FastAPI:
     register_exception_handlers(app)
     app.include_router(auth.router)
     app.include_router(properties.router)
+    app.include_router(documents.router)
+    app.include_router(policies.router)
     return app
 
 

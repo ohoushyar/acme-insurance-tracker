@@ -66,6 +66,12 @@ describe("auth screens", () => {
         });
         return jsonResponse(200, user);
       }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -134,6 +140,12 @@ describe("auth screens", () => {
         });
         return jsonResponse(201, user);
       }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -170,6 +182,12 @@ describe("auth screens", () => {
       if (url.endsWith("/api/v1/auth/logout") && init?.method === "POST") {
         signedIn = false;
         return new Response(null, { status: 204 });
+      }
+      if (url.endsWith("/api/v1/documents")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
