@@ -31,7 +31,20 @@ DOCUMENTS_RLS_STATEMENTS = [
     """,
 ]
 
-RLS_STATEMENTS = PROPERTIES_RLS_STATEMENTS + DOCUMENTS_RLS_STATEMENTS
+POLICIES_RLS_STATEMENTS = [
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE policies TO app",
+    "ALTER TABLE policies ENABLE ROW LEVEL SECURITY",
+    "DROP POLICY IF EXISTS policies_isolation ON policies",
+    """
+    CREATE POLICY policies_isolation ON policies
+        USING (user_id = current_setting('app.user_id')::uuid)
+        WITH CHECK (user_id = current_setting('app.user_id')::uuid)
+    """,
+]
+
+RLS_STATEMENTS = (
+    PROPERTIES_RLS_STATEMENTS + DOCUMENTS_RLS_STATEMENTS + POLICIES_RLS_STATEMENTS
+)
 
 
 def create_engine(database_url: str) -> AsyncEngine:
