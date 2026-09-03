@@ -1,55 +1,21 @@
-from __future__ import annotations
-
-import asyncio
-from datetime import UTC, datetime
 from typing import Annotated
-from uuid import UUID, uuid4
+from uuid import UUID
 
-import structlog
 from fastapi import APIRouter, Depends, File, Request, UploadFile
 from fastapi.responses import Response
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db import set_tenant
 from app.deps import get_current_user, get_tenant_db
-from app.errors import AppError
 from app.extraction.schema import ConfirmExtractedPolicy
-from app.models import Document
-from app.policy_mapping import (
-    document_to_out,
-    policy_ids_for_documents,
-    upsert_policy,
-)
-from app.queue.actors import extract_document
 from app.schemas import DocumentList, DocumentOut, UserOut
-from app.storage import DocumentStore, document_storage_key
+from app.services import documents as document_service
+from app.storage import DocumentStore
 
 router = APIRouter(prefix="/api/v1/documents", tags=["documents"])
-log = structlog.get_logger("documents")
-
-MAX_PDF_BYTES = 10 * 1024 * 1024
-PDF_MAGIC = b"%PDF"
 
 
 def get_document_store(request: Request) -> DocumentStore:
     return request.app.state.document_store
-
-
-def _validate_pdf(upload: UploadFile, body: bytes) -> None:
-    if len(body) > MAX_PDF_BYTES:
-        raise AppError(
-            413,
-            "PAYLOAD_TOO_LARGE",
-            "PDFs must be 10 MB or smaller.",
-        )
-    content_type = (upload.content_type or "").split(";")[0].strip().lower()
-    if content_type != "application/pdf" or not body.startswith(PDF_MAGIC):
-        raise AppError(
-            415,
-            "UNSUPPORTED_MEDIA_TYPE",
-            "Upload a PDF file.",
-        )
 
 
 @router.post("", response_model=DocumentList, status_code=202)
@@ -59,58 +25,7 @@ async def upload_documents(
     store: Annotated[DocumentStore, Depends(get_document_store)],
     files: Annotated[list[UploadFile], File()],
 ) -> DocumentList:
-    if not files:
-        raise AppError(422, "VALIDATION_ERROR", "Choose one or more PDF files.")
-
-    validated: list[tuple[str, bytes]] = []
-    for upload in files:
-        body = await upload.read()
-        _validate_pdf(upload, body)
-        validated.append((upload.filename or "upload.pdf", body))
-
-    created: list[Document] = []
-    for original_filename, body in validated:
-        document_id = uuid4()
-        storage_key = document_storage_key(user.id, document_id)
-        await store.put_pdf(storage_key, body)
-        document = Document(
-            id=document_id,
-            user_id=user.id,
-            original_filename=original_filename,
-            content_type="application/pdf",
-            byte_size=len(body),
-            storage_key=storage_key,
-            status="pending",
-        )
-        session.add(document)
-        created.append(document)
-
-    await session.flush()
-    await session.commit()
-    queued_failed = False
-    for document in created:
-        try:
-            await asyncio.to_thread(
-                extract_document.send, str(document.id), str(user.id)
-            )
-        except Exception:
-            log.exception(
-                "enqueue_failed",
-                document_id=str(document.id),
-                user_id=str(user.id),
-            )
-            queued_failed = True
-            document.status = "failed"
-            document.error_code = "EXTRACTION_FAILED"
-            document.error_message = (
-                "The extraction job could not be queued. Try uploading again."
-            )
-            document.updated_at = datetime.now(UTC)
-    if queued_failed:
-        await set_tenant(session, str(user.id))
-        await session.commit()
-    payload = [document_to_out(document) for document in created]
-    return DocumentList(items=payload)
+    return await document_service.upload(session, store, user.id, files)
 
 
 @router.get("", response_model=DocumentList)
@@ -118,32 +33,7 @@ async def list_documents(
     user: Annotated[UserOut, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
 ) -> DocumentList:
-    result = await session.execute(
-        select(Document)
-        .where(Document.user_id == user.id)
-        .order_by(Document.created_at.desc())
-    )
-    documents = list(result.scalars().all())
-    policy_ids = await policy_ids_for_documents(
-        session, [item.id for item in documents]
-    )
-    return DocumentList(
-        items=[document_to_out(item, policy_ids.get(item.id)) for item in documents]
-    )
-
-
-async def _get_owned_document(
-    document_id: UUID,
-    user: UserOut,
-    session: AsyncSession,
-) -> Document:
-    result = await session.execute(
-        select(Document).where(Document.id == document_id, Document.user_id == user.id)
-    )
-    document = result.scalar_one_or_none()
-    if document is None:
-        raise AppError(404, "NOT_FOUND", "Document not found.")
-    return document
+    return await document_service.list_documents(session, user.id)
 
 
 @router.get("/{document_id}", response_model=DocumentOut)
@@ -152,9 +42,7 @@ async def get_document(
     user: Annotated[UserOut, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
 ) -> DocumentOut:
-    document = await _get_owned_document(document_id, user, session)
-    policy_ids = await policy_ids_for_documents(session, [document.id])
-    return document_to_out(document, policy_ids.get(document.id))
+    return await document_service.get_document(session, user.id, document_id)
 
 
 @router.get("/{document_id}/file")
@@ -164,11 +52,9 @@ async def download_document(
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
     store: Annotated[DocumentStore, Depends(get_document_store)],
 ) -> Response:
-    document = await _get_owned_document(document_id, user, session)
-    try:
-        body = await store.get_pdf(document.storage_key)
-    except FileNotFoundError as exc:
-        raise AppError(404, "NOT_FOUND", "Document not found.") from exc
+    document, body = await document_service.download(
+        session, store, user.id, document_id
+    )
     filename = (document.original_filename or "policy.pdf").replace('"', "")
     return Response(
         content=body,
@@ -184,15 +70,4 @@ async def confirm_document(
     user: Annotated[UserOut, Depends(get_current_user)],
     session: Annotated[AsyncSession, Depends(get_tenant_db)],
 ) -> DocumentOut:
-    document = await _get_owned_document(document_id, user, session)
-    if document.status in {"pending", "processing"}:
-        raise AppError(409, "CONFLICT", "This document is still extracting.")
-    if document.status == "failed":
-        raise AppError(409, "CONFLICT", "Extraction failed — upload again.")
-    if document.status not in {"completed", "reviewed"} or document.extracted is None:
-        raise AppError(409, "CONFLICT", "This document is not ready to confirm.")
-    document.extracted = extracted.model_dump(mode="json")
-    document.status = "reviewed"
-    document.updated_at = datetime.now(UTC)
-    policy = await upsert_policy(session, user.id, document, extracted)
-    return document_to_out(document, policy.id)
+    return await document_service.confirm(session, user.id, document_id, extracted)
