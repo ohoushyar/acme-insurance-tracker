@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import set_tenant
 from app.deps import get_current_user, get_tenant_db
 from app.errors import AppError
+from app.extraction.schema import ConfirmExtractedPolicy
 from app.models import Document
 from app.queue.actors import extract_document
 from app.schemas import DocumentList, DocumentOut, UserOut
@@ -159,5 +160,25 @@ async def download_document(
     return Response(
         content=body,
         media_type="application/pdf",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+        headers={"Content-Disposition": f'inline; filename="{filename}"'},
     )
+
+
+@router.post("/{document_id}/confirm", response_model=DocumentOut)
+async def confirm_document(
+    document_id: UUID,
+    extracted: ConfirmExtractedPolicy,
+    user: Annotated[UserOut, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_tenant_db)],
+) -> Document:
+    document = await _get_owned_document(document_id, user, session)
+    if document.status in {"pending", "processing"}:
+        raise AppError(409, "CONFLICT", "This document is still extracting.")
+    if document.status == "failed":
+        raise AppError(409, "CONFLICT", "Extraction failed — upload again.")
+    if document.status not in {"completed", "reviewed"} or document.extracted is None:
+        raise AppError(409, "CONFLICT", "This document is not ready to confirm.")
+    document.extracted = extracted.model_dump(mode="json")
+    document.status = "reviewed"
+    document.updated_at = datetime.now(UTC)
+    return document

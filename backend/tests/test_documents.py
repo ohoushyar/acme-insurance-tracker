@@ -1,3 +1,5 @@
+import json
+from typing import Any
 from uuid import UUID, uuid4
 
 from httpx import AsyncClient
@@ -8,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from app.config import get_settings
 from app.models import Document
 from app.storage import document_storage_key
+from tests.test_extraction_schema import HARBOR_COVE_EXTRACTED
 
 MINIMAL_PDF = b"%PDF-1.4\n1 0 obj\n<<>>\nendobj\n%%EOF\n"
 MAX_PDF_BYTES = 10 * 1024 * 1024
@@ -162,6 +165,7 @@ async def test_upload_pdf_returns_202_and_file_is_downloadable(
     assert download.status_code == 200
     assert download.content.startswith(b"%PDF")
     assert download.headers["content-type"].startswith("application/pdf")
+    assert download.headers["content-disposition"].startswith("inline;")
 
 
 async def test_mixed_valid_and_invalid_files_store_nothing(
@@ -263,6 +267,261 @@ async def test_rls_errors_on_documents_without_user_setting(
     await engine.dispose()
     assert raised
     assert client
+
+
+async def _owner_id(client: AsyncClient, email: str = "owner@example.com") -> UUID:
+    await _login(client, email, "correct-horse")
+    me = await client.get("/api/v1/auth/me")
+    return UUID(me.json()["id"])
+
+
+async def _insert_document(
+    user_id: UUID,
+    status: str,
+    extracted: dict[str, Any] | None = None,
+    error_code: str | None = None,
+    error_message: str | None = None,
+) -> UUID:
+    settings = get_settings()
+    engine = create_async_engine(settings.admin_database_url)
+    document_id = uuid4()
+    async with engine.begin() as conn:
+        await conn.execute(
+            text("""
+                INSERT INTO documents (
+                    id, user_id, original_filename, content_type, byte_size,
+                    storage_key, status, extracted, error_code, error_message
+                )
+                VALUES (
+                    :id, :uid, 'harbor.pdf', 'application/pdf', 128,
+                    :key, :status, CAST(:extracted AS jsonb),
+                    :error_code, :error_message
+                )
+                """),
+            {
+                "id": document_id,
+                "uid": user_id,
+                "key": document_storage_key(user_id, document_id),
+                "status": status,
+                "extracted": json.dumps(extracted) if extracted is not None else None,
+                "error_code": error_code,
+                "error_message": error_message,
+            },
+        )
+    await engine.dispose()
+    return document_id
+
+
+def _edited_extraction() -> dict[str, Any]:
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["named_insured"] = "Harbor Cove Condominium Association"
+    payload["carriers"] = ["ICAT", "Indian Harbor"]
+    payload["deductibles"] = [
+        {"peril": "Named Hurricane", "amount": "3% (min $50,000)"},
+        {"peril": "All Other Perils", "amount": "$5,000 per occurrence"},
+    ]
+    payload["locations"] = [
+        {"label": "Building 1", "address": "100 Harbor Cove Drive, Tampa, FL"},
+        {"label": "Building 3", "address": "120 Harbor Cove Drive, Tampa, FL"},
+    ]
+    payload["confidence"]["named_insured"] = 1.0
+    payload["confidence"]["carriers"] = 1.0
+    payload["confidence"]["deductibles"] = 1.0
+    payload["confidence"]["locations"] = 1.0
+    return payload
+
+
+async def test_unauthenticated_confirm_is_401(client: AsyncClient) -> None:
+    response = await client.post(
+        f"/api/v1/documents/{uuid4()}/confirm",
+        json=HARBOR_COVE_EXTRACTED,
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+
+
+async def test_user_cannot_confirm_another_users_document(client: AsyncClient) -> None:
+    _, _, _, doc_b = await _seed_users_and_documents()
+    await _login(client, "viewer@example.com", "correct-horse")
+    response = await client.post(
+        f"/api/v1/documents/{doc_b}/confirm",
+        json=HARBOR_COVE_EXTRACTED,
+    )
+    assert response.status_code == 404
+    assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+async def test_confirm_completed_document_persists_edits(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    edited = _edited_extraction()
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=edited,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "reviewed"
+    assert body["extracted"]["named_insured"] == "Harbor Cove Condominium Association"
+    assert body["extracted"]["carriers"] == ["ICAT", "Indian Harbor"]
+    assert body["extracted"]["deductibles"] == [
+        {"peril": "Named Hurricane", "amount": "3% (min $50,000)"},
+        {"peril": "All Other Perils", "amount": "$5,000 per occurrence"},
+    ]
+    assert body["extracted"]["locations"][1]["label"] == "Building 3"
+
+    fetched = await client.get(f"/api/v1/documents/{document_id}")
+    assert fetched.status_code == 200
+    assert fetched.json()["status"] == "reviewed"
+    assert fetched.json()["extracted"]["deductibles"][0]["amount"] == "3% (min $50,000)"
+
+
+async def test_reconfirm_reviewed_document_updates_extracted(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "reviewed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    edited = _edited_extraction()
+    edited["named_insured"] = "Harbor Cove HOA"
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=edited,
+    )
+    assert response.status_code == 200
+    assert response.json()["status"] == "reviewed"
+    assert response.json()["extracted"]["named_insured"] == "Harbor Cove HOA"
+
+
+async def test_confirm_pending_document_is_409(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(user_id, "pending")
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=HARBOR_COVE_EXTRACTED,
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "CONFLICT"
+    assert "extracting" in response.json()["error"]["message"].lower()
+
+
+async def test_confirm_failed_document_is_409(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id,
+        "failed",
+        error_code="EXTRACTION_FAILED",
+        error_message="This document looks scanned or has no extractable text.",
+    )
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=HARBOR_COVE_EXTRACTED,
+    )
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "CONFLICT"
+    assert "failed" in response.json()["error"]["message"].lower()
+
+
+async def test_confirm_empty_string_scalar_becomes_null(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["named_insured"] = ""
+    payload["confidence"]["named_insured"] = 0.9
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 200
+    extracted = response.json()["extracted"]
+    assert extracted["named_insured"] is None
+    assert extracted["confidence"]["named_insured"] == 0
+
+
+async def test_confirm_invalid_date_is_422(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["effective_date"] = "not-a-date"
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_confirm_invalid_premium_is_422(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["term_premium"] = ["not-a-decimal"]
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_confirm_junk_premium_string_is_422(client: AsyncClient) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["term_premium"] = "185000 approx"
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_confirm_parenthetical_premium_is_not_rewritten(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["term_premium"] = "185000 (includes $1500)"
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_confirm_currency_formatted_premium_is_accepted(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    document_id = await _insert_document(
+        user_id, "completed", extracted=HARBOR_COVE_EXTRACTED
+    )
+    payload = json.loads(json.dumps(HARBOR_COVE_EXTRACTED))
+    payload["term_premium"] = "$185,000.00"
+    response = await client.post(
+        f"/api/v1/documents/{document_id}/confirm",
+        json=payload,
+    )
+    assert response.status_code == 200
+    assert response.json()["extracted"]["term_premium"] == "185000.00"
 
 
 assert Document.__tablename__ == "documents"
