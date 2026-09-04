@@ -110,9 +110,10 @@ insured`, `premium`, `deductible`, `policy period`, `limit of
 insurance`, and close variants). Pages above a small hit threshold
 (plus immediate neighbors, so a split table is not cut in half) are
 kept. If **no** page scores, fall back to the **first ~8 pages** (decls
-usually sit at the front of a jacket). Only that subset is passed to
-`extract_fields`. OpenRouter never sees the full 35-page ISO boilerplate
-unless the fallback fires on a short doc.
+usually sit at the front of a jacket). If too many pages hit (those
+keywords appear throughout a commercial jacket), keep the **8
+highest-scoring pages** and cap joined text at ~24k characters so
+OpenRouter is not sent the full ISO boilerplate.
 
 This is a cost/quality heuristic from PRD §5 (Harbor Cove: decls are a
 small fraction of pages). It can miss an unusual layout; step 2 accepts

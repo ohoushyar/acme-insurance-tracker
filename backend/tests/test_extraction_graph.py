@@ -138,3 +138,60 @@ async def test_graph_fails_when_llm_does_not_respond(monkeypatch) -> None:
     assert result.extracted is None
     message = (result.error_message or "").lower()
     assert "time" in message
+
+
+def test_select_declaration_pages_caps_pages_that_all_mention_premium() -> None:
+    from app.extraction.graph import select_declaration_pages
+
+    boilerplate = ["Form language. Premium and deductible apply.\n" * 40] * 30
+    selected = select_declaration_pages(boilerplate)
+
+    assert 1 <= len(selected) <= 8
+    assert sum(len(page) for page in selected) < 245_037
+
+
+def test_select_declaration_pages_keeps_high_score_decls_when_capping() -> None:
+    from app.extraction.graph import select_declaration_pages
+
+    decls = (
+        "POLICY DECLARATIONS\n"
+        "Named Insured: Harbor Cove LLC\n"
+        "Premium: $185,000\n"
+        "Deductible: Wind/Hail $50,000\n"
+        "Policy Period: January 1 2024 to January 1 2025\n"
+        "Limit of Insurance: $25,000,000\n"
+    )
+    pages = ["Premium due as shown.\n"] * 20
+    pages[12] = decls
+    selected = select_declaration_pages(pages)
+
+    assert any("Harbor Cove LLC" in page for page in selected)
+    assert len(selected) <= 8
+
+
+async def test_graph_does_not_send_full_jacket_to_llm() -> None:
+    from app.extraction.graph import run_extraction
+    from app.extraction.schema import ExtractedPolicy
+
+    extracted = ExtractedPolicy.model_validate(
+        {
+            "named_insured": "Harbor Cove LLC",
+            "carriers": ["Acme Insurance Company"],
+            "deductibles": [{"peril": "All Other Perils", "amount": "25000.00"}],
+            "locations": [{"label": "Building 1", "address": "100 Harbor Cove Drive"}],
+            "confidence": {
+                "named_insured": 0.9,
+                "carriers": 0.9,
+                "deductibles": 0.9,
+                "locations": 0.9,
+            },
+        }
+    )
+    llm = _fake_llm(extracted)
+    jacket = ["ISO form. Premium and deductible. Limit of insurance.\n" * 80] * 40
+
+    result = await run_extraction(pages=jacket, llm=llm)
+
+    assert result.status == "completed"
+    human = llm._structured.invoke.call_args.args[0][1]
+    assert len(human.content) <= 24_000

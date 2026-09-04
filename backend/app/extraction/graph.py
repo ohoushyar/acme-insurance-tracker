@@ -19,6 +19,8 @@ from app.extraction.schema import ExtractedPolicy
 
 MIN_TEXT_CHARS = 40
 FALLBACK_PAGE_COUNT = 8
+MAX_SELECTED_PAGES = 8
+MAX_SELECTED_CHARS = 24_000
 PAGE_HIT_THRESHOLD = 1
 LLM_INVOKE_TIMEOUT_SECONDS = LLM_REQUEST_TIMEOUT_MS / 1000
 log = structlog.get_logger("extraction")
@@ -70,22 +72,41 @@ def _score_page(text: str) -> int:
 
 
 def select_declaration_pages(pages: list[str]) -> list[str]:
-    hits = {
-        index
-        for index, page in enumerate(pages)
-        if _score_page(page) >= PAGE_HIT_THRESHOLD
-    }
-    if not hits:
-        return pages[:FALLBACK_PAGE_COUNT]
-    with_neighbors: set[int] = set()
+    if not pages:
+        return []
+    scores = [_score_page(page) for page in pages]
+    hit_indices = [i for i, score in enumerate(scores) if score >= PAGE_HIT_THRESHOLD]
+    if not hit_indices:
+        return _cap_selected_pages(pages[:FALLBACK_PAGE_COUNT])
     last = len(pages) - 1
-    for index in hits:
+    with_neighbors: set[int] = set()
+    for index in hit_indices:
         with_neighbors.add(index)
         if index > 0:
             with_neighbors.add(index - 1)
         if index < last:
             with_neighbors.add(index + 1)
-    return [pages[index] for index in sorted(with_neighbors)]
+    if len(with_neighbors) > MAX_SELECTED_PAGES:
+        ranked = sorted(with_neighbors, key=lambda i: (-scores[i], i))
+        with_neighbors = set(ranked[:MAX_SELECTED_PAGES])
+    selected = [pages[i] for i in sorted(with_neighbors)]
+    return _cap_selected_pages(selected)
+
+
+def _cap_selected_pages(pages: list[str]) -> list[str]:
+    if not pages:
+        return []
+    kept: list[str] = []
+    total = 0
+    for page in pages:
+        extra = len(page) + (2 if kept else 0)
+        if kept and total + extra > MAX_SELECTED_CHARS:
+            break
+        kept.append(page)
+        total += extra
+    if kept:
+        return kept
+    return [pages[0][:MAX_SELECTED_CHARS]]
 
 
 def pages_from_pdf(pdf_bytes: bytes) -> list[str]:
