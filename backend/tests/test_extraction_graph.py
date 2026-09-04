@@ -17,6 +17,7 @@ def _declarations_pages() -> list[str]:
 def _fake_llm(extracted: object) -> MagicMock:
     llm = MagicMock()
     structured = MagicMock()
+    structured.invoke = MagicMock(return_value=extracted)
     structured.ainvoke = AsyncMock(return_value=extracted)
     llm.with_structured_output.return_value = structured
     llm._structured = structured
@@ -56,7 +57,7 @@ async def test_graph_returns_structured_result_for_declarations_text() -> None:
     assert len(result.extracted.deductibles) == 2
     assert result.extracted.locations[0].label == "Building 1"
     llm.with_structured_output.assert_called()
-    llm._structured.ainvoke.assert_awaited()
+    llm._structured.invoke.assert_called()
 
 
 async def test_graph_does_not_call_llm_when_text_is_empty() -> None:
@@ -104,7 +105,7 @@ async def test_graph_fails_job_when_structured_output_is_invalid() -> None:
 
     llm = MagicMock()
     structured = MagicMock()
-    structured.ainvoke = AsyncMock(side_effect=invalid)
+    structured.invoke = MagicMock(side_effect=invalid)
     llm.with_structured_output.return_value = structured
 
     result = await run_extraction(pages=_declarations_pages(), llm=llm)
@@ -112,3 +113,28 @@ async def test_graph_fails_job_when_structured_output_is_invalid() -> None:
     assert result.status == "failed"
     assert result.error_code == "EXTRACTION_FAILED"
     assert result.extracted is None
+
+
+async def test_graph_fails_when_llm_does_not_respond(monkeypatch) -> None:
+    import time
+
+    from app.extraction import graph as graph_mod
+    from app.extraction.graph import run_extraction
+
+    def hang(*args: object, **kwargs: object) -> object:
+        time.sleep(2)
+        raise AssertionError("hang should have been timed out")
+
+    llm = MagicMock()
+    structured = MagicMock()
+    structured.invoke = hang
+    llm.with_structured_output.return_value = structured
+    monkeypatch.setattr(graph_mod, "LLM_INVOKE_TIMEOUT_SECONDS", 0.05)
+
+    result = await run_extraction(pages=_declarations_pages(), llm=llm)
+
+    assert result.status == "failed"
+    assert result.error_code == "EXTRACTION_FAILED"
+    assert result.extracted is None
+    message = (result.error_message or "").lower()
+    assert "time" in message

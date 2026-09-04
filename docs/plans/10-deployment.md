@@ -78,12 +78,10 @@ default to Compose-like values; `OPENROUTER_API_KEY` comes from `.env`.
 state. It does **not** shut down Rancher Desktop. Idempotent if already
 gone. Does not touch Compose volumes.
 
-If the worker log stops at `extraction_started`, it is waiting on MinIO
-(`extraction_pdf_fetch`) or the graph/LLM (`extraction_graph_started`).
-A missing `OPENROUTER_API_KEY` at `make deploy-local` time, cluster
-egress to `openrouter.ai`, or TLS intercept will stall that call until
-the 120s HTTP timeout, then Dramatiq retries. Rebuild and redeploy the
-API image after changing extraction code.
+If the worker log stops at `extraction_llm_invoke`, OpenRouter HTTPS is
+blocked (egress or TLS intercept). After redeploy the job fails within
+120s with `extraction_llm_timeout` instead of sitting until Dramatiq's
+10-minute limit.
 
 Local k8s and Compose set `OPENROUTER_TLS_SECLEVEL=1` so OpenSSL 3 still
 verifies `openrouter.ai` but accepts TLS-intercept leaf certs with

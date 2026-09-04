@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from io import BytesIO
 from typing import Any, TypedDict
@@ -13,11 +14,13 @@ from pydantic import ValidationError
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
+from app.extraction.llm import LLM_REQUEST_TIMEOUT_MS
 from app.extraction.schema import ExtractedPolicy
 
 MIN_TEXT_CHARS = 40
 FALLBACK_PAGE_COUNT = 8
 PAGE_HIT_THRESHOLD = 1
+LLM_INVOKE_TIMEOUT_SECONDS = LLM_REQUEST_TIMEOUT_MS / 1000
 log = structlog.get_logger("extraction")
 PAGE_KEYWORDS = (
     "declarations",
@@ -144,14 +147,29 @@ async def extract_fields_node(
         return {}
     llm = config["configurable"]["llm"]
     structured = llm.with_structured_output(ExtractedPolicy)
+    messages = [
+        SystemMessage(content=EXTRACTION_SYSTEM_PROMPT),
+        HumanMessage(content=state["selected_text"]),
+    ]
     try:
-        log.info("extraction_llm_invoke")
-        extracted = await structured.ainvoke(
-            [
-                SystemMessage(content=EXTRACTION_SYSTEM_PROMPT),
-                HumanMessage(content=state["selected_text"]),
-            ]
+        log.info(
+            "extraction_llm_invoke",
+            selected_chars=len(state.get("selected_text") or ""),
         )
+        extracted = await asyncio.wait_for(
+            asyncio.to_thread(structured.invoke, messages),
+            timeout=LLM_INVOKE_TIMEOUT_SECONDS,
+        )
+    except TimeoutError:
+        log.warning("extraction_llm_timeout")
+        return {
+            "extracted": None,
+            "status": "failed",
+            "error_code": "EXTRACTION_FAILED",
+            "error_message": (
+                "The extraction service did not respond in time. Try again."
+            ),
+        }
     except (ValidationError, OutputParserException):
         return {
             "extracted": None,
@@ -162,6 +180,7 @@ async def extract_fields_node(
                 "Try uploading the document again."
             ),
         }
+    log.info("extraction_llm_finished")
     return {"extracted": extracted, "status": "completed"}
 
 

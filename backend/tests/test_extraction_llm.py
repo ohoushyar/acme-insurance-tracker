@@ -73,6 +73,7 @@ def test_build_extraction_llm_wires_seclevel_one_verify(
 
     def wrap_async(*args: object, **kwargs: object) -> httpx.AsyncClient:
         seen["async"] = kwargs.get("verify", True)
+        seen["async_timeout"] = kwargs.get("timeout")
         return real_async(*args, **kwargs)
 
     monkeypatch.setattr(llm_mod.httpx, "Client", wrap_client)
@@ -83,3 +84,6 @@ def test_build_extraction_llm_wires_seclevel_one_verify(
     assert isinstance(seen["sync"], ssl.SSLContext)
     assert isinstance(seen["async"], ssl.SSLContext)
     assert seen["async"].verify_mode == ssl.CERT_REQUIRED
+    timeout = seen["async_timeout"]
+    assert isinstance(timeout, httpx.Timeout)
+    assert timeout.connect == 10.0

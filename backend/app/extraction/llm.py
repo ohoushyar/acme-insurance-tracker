@@ -30,7 +30,12 @@ def build_extraction_llm(settings: Settings) -> Any:
     from langchain_openrouter import ChatOpenRouter
 
     verify = openrouter_httpx_verify(settings)
-    timeout = httpx.Timeout(LLM_REQUEST_TIMEOUT_MS / 1000)
+    timeout = httpx.Timeout(
+        connect=10.0,
+        read=LLM_REQUEST_TIMEOUT_MS / 1000,
+        write=30.0,
+        pool=5.0,
+    )
     headers = {"X-Title": APP_TITLE}
     sdk = openrouter.OpenRouter(
         api_key=settings.openrouter_api_key,
