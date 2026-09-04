@@ -243,7 +243,7 @@ describe("saved policies", () => {
     expect(section).toHaveTextContent("Building 1");
   });
 
-  it("still lists documents when saved policies fail to load", async () => {
+  it("still lists documents on Uploads when saved policies fail to load", async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
       if (url.endsWith("/api/v1/auth/me")) {
@@ -274,13 +274,19 @@ describe("saved policies", () => {
     });
 
     renderAt("/");
-    expect(await screen.findByText("mine.pdf")).toBeInTheDocument();
     expect(
       await screen.findByText("Unable to load saved policies."),
     ).toBeInTheDocument();
     expect(
+      screen.queryByText(/no saved policies yet/i),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByText("mine.pdf")).not.toBeInTheDocument();
+    expect(
       screen.queryByRole("region", { name: /saved policies/i }),
     ).not.toBeInTheDocument();
+
+    renderAt("/uploads");
+    expect(await screen.findByText("mine.pdf")).toBeInTheDocument();
   });
 
   it("still lists saved policies when properties fail to load", async () => {

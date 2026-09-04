@@ -157,7 +157,7 @@ export function Review() {
     return (
       <Shell onLogout={logout}>
         <p className="error">{loadError}</p>
-        <Link to="/">Back to portfolio</Link>
+        <Link to="/uploads">Back to uploads</Link>
       </Shell>
     );
   }
@@ -181,7 +181,7 @@ export function Review() {
           This document is {job.status}. Extraction has to finish before you can
           confirm fields.
         </p>
-        <Link to="/">Back to portfolio</Link>
+        <Link to="/uploads">Back to uploads</Link>
       </Shell>
     );
   }
@@ -466,7 +466,7 @@ export function Review() {
           <button
             className="btn-light"
             type="button"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/uploads")}
           >
             Cancel
           </button>

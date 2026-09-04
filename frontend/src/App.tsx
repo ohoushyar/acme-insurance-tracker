@@ -9,6 +9,7 @@ import { Properties } from "./pages/Properties";
 import { Register } from "./pages/Register";
 import { Reminders } from "./pages/Reminders";
 import { Review } from "./pages/Review";
+import { Uploads } from "./pages/Uploads";
 import { RemindersProvider } from "./reminder-count";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -23,6 +24,7 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/uploads" element={<Uploads />} />
       <Route path="/properties" element={<Properties />} />
       <Route path="/reminders" element={<Reminders />} />
       <Route path="/policies/:id/edit" element={<PolicyEdit />} />

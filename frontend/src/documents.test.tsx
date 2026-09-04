@@ -5,9 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders, AppRoutes } from "./App";
 import type { DocumentJob } from "./api";
 
-function renderHome() {
+function renderUploads() {
   return render(
-    <MemoryRouter initialEntries={["/"]}>
+    <MemoryRouter initialEntries={["/uploads"]}>
       <AppProviders>
         <AppRoutes />
       </AppProviders>
@@ -122,10 +122,14 @@ describe("document upload", () => {
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
-    renderHome();
+    renderUploads();
     expect(
-      await screen.findByRole("heading", { name: /your insurance portfolio/i }),
+      await screen.findByRole("heading", { name: /^uploads$/i }),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^uploads$/i })).toHaveAttribute(
+      "href",
+      "/uploads",
+    );
 
     const file = new File(["%PDF-1.4"], "harbor.pdf", {
       type: "application/pdf",
@@ -188,8 +192,8 @@ describe("document upload", () => {
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
-    renderHome();
-    await screen.findByRole("heading", { name: /your insurance portfolio/i });
+    renderUploads();
+    await screen.findByRole("heading", { name: /^uploads$/i });
     const file = new File(["%PDF-1.4"], "harbor.pdf", {
       type: "application/pdf",
     });
@@ -233,7 +237,7 @@ describe("document upload", () => {
       throw new Error(`unexpected fetch ${url}`);
     });
 
-    renderHome();
+    renderUploads();
     expect(await screen.findByText("mine.pdf")).toBeInTheDocument();
     expect(screen.queryByText("theirs.pdf")).not.toBeInTheDocument();
     expect(screen.queryByText("user-b")).not.toBeInTheDocument();

@@ -30,6 +30,16 @@ export function Shell({
             </li>
             <li>
               <Link
+                to="/uploads"
+                aria-current={
+                  location.pathname.startsWith("/uploads") ? "page" : undefined
+                }
+              >
+                Uploads
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/properties"
                 aria-current={
                   location.pathname.startsWith("/properties")

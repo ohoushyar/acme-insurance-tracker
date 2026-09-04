@@ -91,7 +91,6 @@ describe("auth screens", () => {
     expect(
       await screen.findByRole("heading", { name: /your insurance portfolio/i }),
     ).toBeInTheDocument();
-    expect(screen.getByText("owner@example.com")).toBeInTheDocument();
   });
 
   it("shows the API error message when login fails", async () => {

@@ -219,7 +219,6 @@ describe("review confirm screen", () => {
     expect(
       await screen.findByRole("heading", { name: /your insurance portfolio/i }),
     ).toBeInTheDocument();
-    expect(await screen.findByText(/reviewed/i)).toBeInTheDocument();
     await waitFor(() => {
       expect(
         vi
@@ -265,7 +264,7 @@ describe("review confirm screen", () => {
     await userEvent.click(screen.getByRole("button", { name: /^cancel$/i }));
 
     expect(
-      await screen.findByRole("heading", { name: /your insurance portfolio/i }),
+      await screen.findByRole("heading", { name: /^uploads$/i }),
     ).toBeInTheDocument();
     expect(
       vi
@@ -289,7 +288,7 @@ describe("review confirm screen", () => {
     ).toBeInTheDocument();
   });
 
-  it("offers a review link on Home for completed jobs instead of the full field grid", async () => {
+  it("offers a review link on Uploads for completed jobs instead of the full field grid", async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);
       if (url.endsWith("/api/v1/auth/me")) {
@@ -310,7 +309,7 @@ describe("review confirm screen", () => {
       throw new Error(`unexpected fetch ${url}`);
     });
 
-    renderAt("/");
+    renderAt("/uploads");
     expect(
       await screen.findByRole("link", { name: /review extracted fields/i }),
     ).toHaveAttribute("href", "/documents/doc-1/review");
