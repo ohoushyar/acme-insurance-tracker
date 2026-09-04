@@ -48,9 +48,7 @@ async def test_change_password_then_login_with_new(
     await auth_service.change_password(
         db_session, created.id, "correct-horse", "new-horse-1"
     )
-    logged_in = await auth_service.login(
-        db_session, "owner@example.com", "new-horse-1"
-    )
+    logged_in = await auth_service.login(db_session, "owner@example.com", "new-horse-1")
     assert logged_in.id == created.id
     with pytest.raises(AppError) as exc:
         await auth_service.login(db_session, "owner@example.com", "correct-horse")
