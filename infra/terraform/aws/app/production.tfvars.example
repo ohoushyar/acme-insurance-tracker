@@ -1,0 +1,5 @@
+environment         = "production"
+aws_region          = "us-east-1"
+# image_tag and openrouter_api_key are passed by make deploy
+# image_tag           = "replace-me"
+# openrouter_api_key  = "replace-me"

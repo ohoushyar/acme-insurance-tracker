@@ -17,6 +17,21 @@ frontend/coverage/
 # Env and secrets
 .env
 k8s/secret.yaml
+*.tfvars
+!*.tfvars.example
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfstate.d
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+.terraformrc
+terraform.rc
 
 # OS / editor
 .DS_Store

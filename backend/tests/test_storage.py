@@ -1,14 +1,33 @@
+from unittest.mock import MagicMock
 from uuid import uuid4
 
 import pytest
 
+from app.config import Settings
 from app.storage import (
     InMemoryDocumentStore,
     S3DocumentStore,
     StorageKeyError,
     assert_owned_storage_key,
+    build_document_store,
     document_storage_key,
+    is_aws_s3_endpoint,
+    s3_addressing_style,
 )
+
+
+def _settings(**overrides: str) -> Settings:
+    values: dict[str, str] = {
+        "database_url": "postgresql+asyncpg://app:app@localhost:5432/insurance",
+        "redis_url": "redis://localhost:6379/0",
+        "s3_endpoint": "",
+        "s3_bucket": "insurance-docs",
+        "s3_access_key": "",
+        "s3_secret_key": "",
+        "s3_region": "us-east-1",
+    }
+    values.update(overrides)
+    return Settings(**values)
 
 
 def test_storage_key_is_user_id_slash_document_id_pdf() -> None:
@@ -94,3 +113,70 @@ async def test_s3_missing_key_raises_file_not_found() -> None:
     )
     with pytest.raises(FileNotFoundError):
         await store.get_pdf(document_storage_key(uuid4(), uuid4()))
+
+
+def test_empty_endpoint_builds_in_memory_store() -> None:
+    store = build_document_store(_settings(s3_endpoint=""))
+    assert isinstance(store, InMemoryDocumentStore)
+
+
+def test_aws_s3_endpoint_detection() -> None:
+    assert is_aws_s3_endpoint("https://s3.us-east-1.amazonaws.com")
+    assert is_aws_s3_endpoint("https://s3.amazonaws.com")
+    assert not is_aws_s3_endpoint("http://minio:9000")
+    assert not is_aws_s3_endpoint("http://127.0.0.1:9000")
+    assert not is_aws_s3_endpoint("")
+    assert s3_addressing_style("https://s3.us-east-1.amazonaws.com") == "virtual"
+    assert s3_addressing_style("http://minio:9000") == "path"
+
+
+def test_aws_endpoint_without_keys_uses_default_credential_chain(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_client(service_name: str, **kwargs: object) -> MagicMock:
+        assert service_name == "s3"
+        captured.update(kwargs)
+        return MagicMock()
+
+    monkeypatch.setattr("app.storage.boto3.client", fake_client)
+    store = build_document_store(
+        _settings(
+            s3_endpoint="https://s3.us-east-1.amazonaws.com",
+            s3_access_key="",
+            s3_secret_key="",
+        )
+    )
+    assert isinstance(store, S3DocumentStore)
+    assert "aws_access_key_id" not in captured
+    assert "aws_secret_access_key" not in captured
+    assert captured.get("endpoint_url") == "https://s3.us-east-1.amazonaws.com"
+    config = captured["config"]
+    assert config.s3["addressing_style"] == "virtual"
+
+
+def test_minio_endpoint_uses_path_style_and_static_keys(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured: dict[str, object] = {}
+
+    def fake_client(service_name: str, **kwargs: object) -> MagicMock:
+        assert service_name == "s3"
+        captured.update(kwargs)
+        return MagicMock()
+
+    monkeypatch.setattr("app.storage.boto3.client", fake_client)
+    store = build_document_store(
+        _settings(
+            s3_endpoint="http://minio:9000",
+            s3_access_key="minioadmin",
+            s3_secret_key="minioadmin",
+        )
+    )
+    assert isinstance(store, S3DocumentStore)
+    assert captured["aws_access_key_id"] == "minioadmin"
+    assert captured["aws_secret_access_key"] == "minioadmin"
+    assert captured.get("endpoint_url") == "http://minio:9000"
+    config = captured["config"]
+    assert config.s3["addressing_style"] == "path"

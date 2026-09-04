@@ -1,12 +1,8 @@
 # Insurance Tracker
 
-CRE insurance renewal tracker. This repository is at **build-order step 4**:
-accounts, sessions, a user-scoped data boundary, PDF upload/extraction, an
-editable review/confirm screen, and confirmed policies stored per user. See
-[docs/plans/01-auth-foundation.md](docs/plans/01-auth-foundation.md),
-[docs/plans/02-upload-extraction.md](docs/plans/02-upload-extraction.md),
-[docs/plans/03-review-confirm.md](docs/plans/03-review-confirm.md), and
-[docs/plans/04-confirmed-policies.md](docs/plans/04-confirmed-policies.md).
+CRE insurance renewal tracker. See [docs/plans/](docs/plans/) for the
+build-order writeups. Cluster deploy is documented in
+[docs/plans/10-deployment.md](docs/plans/10-deployment.md).
 
 ## Prerequisites
 
@@ -15,6 +11,9 @@ editable review/confirm screen, and confirmed policies stored per user. See
 - Docker (for Postgres, Redis, MinIO, and optional full-stack Compose)
 - An [OpenRouter](https://openrouter.ai/) API key for live extraction (not
   required for tests; CI uses a fake LLM)
+
+For **cluster** deploy (optional): [k3d](https://k3d.io),
+[Terraform](https://www.terraform.io/) 1.5+, and the AWS CLI (production).
 
 ## Local development
 
@@ -81,6 +80,8 @@ Uploaded PDFs go to MinIO (`insurance-docs` bucket) under
 http://localhost:9100 (console http://localhost:9101). Extraction jobs
 are queued on Redis DB 2 (`DRAMATIQ_REDIS_URL`).
 
+`make serve` and `make frontend` wrap the same inner loop.
+
 ## Tests
 
 ```bash
@@ -110,19 +111,43 @@ docker compose up --build
 - API docs: http://localhost:8000/docs
 
 The frontend image is nginx + a Vite production build. It proxies `/api` to the
-`api` service. Kubernetes Ingress does the same job in a cluster; Vite is not
-in the production path.
+`api` service. Vite is not in the production path.
 
 Compose also runs MinIO (S3-compatible PDF store) and a Dramatiq worker on
 Redis DB 2. Set `OPENROUTER_API_KEY` in the environment for live extraction.
 
-## Kubernetes
+## Local Kubernetes (k3d)
 
-Manifests live in `k8s/`. Copy `k8s/secret.yaml.example` to `k8s/secret.yaml`,
-fill in credentials, and apply ConfigMap, Secret, Postgres, Redis, MinIO, API,
-worker, frontend, and Ingress. Images are `insurance-tracker-api:latest` and
-`insurance-tracker-frontend:latest` (build from `backend/Dockerfile` and
-`frontend/Dockerfile`). The worker uses the API image with
-`dramatiq app.queue.actors`. Production can replace the in-cluster
-Postgres/Redis/MinIO with managed services by changing `DATABASE_URL`,
-`REDIS_URL`, `DRAMATIQ_REDIS_URL`, and `S3_ENDPOINT`.
+One pod runs API, Dramatiq, Postgres, Redis, MinIO, and nginx:
+
+```bash
+make deploy-local
+# http://localhost:8080
+make destroy-local
+```
+
+Requires k3d, Terraform, and Docker. `destroy-local` deletes the k3d cluster
+and Terraform state; it does not remove Docker images or Compose volumes.
+
+## AWS (staging / production)
+
+Shared EKS cluster; per-env namespace, S3 buckets (SPA + PDFs), and
+CloudFront. API and worker run at `replicas=2`. Postgres and Redis stay
+in-cluster (1 replica).
+
+```bash
+make deploy ENV=staging
+make deploy ENV=production
+make destroy-aws ENV=staging
+make destroy-aws ENV=production CONFIRM=yes
+# optional: also tear down the shared EKS/VPC after both envs are gone
+make destroy-aws ENV=staging DESTROY_CLUSTER=yes
+```
+
+Copy `infra/terraform/aws/platform/terraform.tfvars.example` and
+`infra/terraform/aws/app/staging.tfvars.example` (or `production`) to
+`*.tfvars` if you need non-default region or cluster name. Pass
+`OPENROUTER_API_KEY` via `.env` or the environment.
+
+Existing YAML under `k8s/` is a reference only; Terraform owns applied
+resources.
