@@ -137,7 +137,8 @@ export function PolicyEdit() {
             <p className="error">{propertiesError}</p>
           ) : properties.length === 0 ? (
             <p className="muted">
-              No properties yet. Add them under Properties.
+              No properties yet.{" "}
+              <Link to="/properties/new">Add a property</Link>.
             </p>
           ) : (
             <div className="attach-list">

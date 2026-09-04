@@ -7,6 +7,8 @@ import { PolicyDetail } from "./pages/PolicyDetail";
 import { PolicyEdit } from "./pages/PolicyEdit";
 import { Profile } from "./pages/Profile";
 import { Properties } from "./pages/Properties";
+import { PropertyEdit } from "./pages/PropertyEdit";
+import { PropertyNew } from "./pages/PropertyNew";
 import { Register } from "./pages/Register";
 import { Reminders } from "./pages/Reminders";
 import { Review } from "./pages/Review";
@@ -26,6 +28,8 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/uploads" element={<Uploads />} />
+      <Route path="/properties/new" element={<PropertyNew />} />
+      <Route path="/properties/:id/edit" element={<PropertyEdit />} />
       <Route path="/properties" element={<Properties />} />
       <Route path="/reminders" element={<Reminders />} />
       <Route path="/profile" element={<Profile />} />

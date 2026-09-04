@@ -251,6 +251,10 @@ export function listProperties(): Promise<PropertyList> {
   return request<PropertyList>("/api/v1/properties");
 }
 
+export function getProperty(id: string): Promise<Property> {
+  return request<Property>(`/api/v1/properties/${id}`);
+}
+
 export function createProperty(body: PropertyWrite): Promise<Property> {
   return request<Property>("/api/v1/properties", {
     method: "POST",
