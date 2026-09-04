@@ -47,7 +47,15 @@ def extracted_from_policy(policy: Policy) -> ExtractedPolicy:
     )
 
 
-def policy_to_out(policy: Policy, property_ids: list[UUID] | None = None) -> PolicyOut:
+def policy_to_out(
+    policy: Policy,
+    property_ids: list[UUID] | None = None,
+    *,
+    previous_premium=None,
+    yoy_change_pct: float | None = None,
+    yoy_flagged: bool = False,
+    link_suggestions: list | None = None,
+) -> PolicyOut:
     extracted = extracted_from_policy(policy)
     return PolicyOut(
         id=policy.id,
@@ -56,6 +64,11 @@ def policy_to_out(policy: Policy, property_ids: list[UUID] | None = None) -> Pol
         created_at=policy.created_at,
         updated_at=policy.updated_at,
         property_ids=list(property_ids or []),
+        series_id=policy.series_id,
+        previous_premium=previous_premium,
+        yoy_change_pct=yoy_change_pct,
+        yoy_flagged=yoy_flagged,
+        link_suggestions=list(link_suggestions or []),
         **extracted.model_dump(),
     )
 
