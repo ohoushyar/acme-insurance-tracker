@@ -292,6 +292,16 @@ export function listReminders(): Promise<ReminderList> {
   return request<ReminderList>("/api/v1/reminders");
 }
 
+export function markReminderRead(id: string): Promise<Reminder> {
+  return request<Reminder>(`/api/v1/reminders/${id}/read`, { method: "POST" });
+}
+
+export function markReminderUnread(id: string): Promise<Reminder> {
+  return request<Reminder>(`/api/v1/reminders/${id}/unread`, {
+    method: "POST",
+  });
+}
+
 export async function uploadDocuments(files: File[]): Promise<DocumentList> {
   const body = new FormData();
   for (const file of files) {

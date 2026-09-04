@@ -7,6 +7,7 @@ import { PolicyDetail } from "./pages/PolicyDetail";
 import { PolicyEdit } from "./pages/PolicyEdit";
 import { Properties } from "./pages/Properties";
 import { Register } from "./pages/Register";
+import { Reminders } from "./pages/Reminders";
 import { Review } from "./pages/Review";
 import { RemindersProvider } from "./reminder-count";
 
@@ -23,6 +24,7 @@ export function AppRoutes() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/properties" element={<Properties />} />
+      <Route path="/reminders" element={<Reminders />} />
       <Route path="/policies/:id/edit" element={<PolicyEdit />} />
       <Route path="/policies/:id" element={<PolicyDetail />} />
       <Route path="/documents/:id/review" element={<Review />} />
