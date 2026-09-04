@@ -68,6 +68,21 @@ variable "worker_replicas" {
   default = 2
 }
 
+variable "ses_from_address" {
+  type    = string
+  default = ""
+}
+
+variable "ses_hosted_zone_id" {
+  type    = string
+  default = ""
+}
+
+variable "app_public_url" {
+  type    = string
+  default = ""
+}
+
 data "aws_caller_identity" "current" {}
 
 locals {

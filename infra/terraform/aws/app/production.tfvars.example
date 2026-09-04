@@ -1,5 +1,8 @@
 environment         = "production"
 aws_region          = "us-east-1"
 # image_tag and openrouter_api_key are passed by make deploy
+# ses_from_address    = "noreply@mail.example.com"
+# ses_hosted_zone_id  = "Zxxxxxxxxxxxx"
+# app_public_url      = "https://dxxxxx.cloudfront.net"
 # image_tag           = "replace-me"
 # openrouter_api_key  = "replace-me"

@@ -34,6 +34,21 @@ variable "openrouter_api_key" {
   sensitive = true
 }
 
+variable "ses_from_address" {
+  type    = string
+  default = ""
+}
+
+variable "ses_hosted_zone_id" {
+  type    = string
+  default = ""
+}
+
+variable "app_public_url" {
+  type    = string
+  default = ""
+}
+
 provider "aws" {
   region = var.aws_region
 }
@@ -65,6 +80,9 @@ module "app" {
   image_tag          = var.image_tag
   ecr_repository_url = data.terraform_remote_state.platform.outputs.ecr_repository_url
   openrouter_api_key = var.openrouter_api_key
+  ses_from_address   = var.ses_from_address
+  ses_hosted_zone_id = var.ses_hosted_zone_id
+  app_public_url     = var.app_public_url
 }
 
 output "frontend_bucket" {
@@ -85,4 +103,8 @@ output "cloudfront_url" {
 
 output "namespace" {
   value = module.app.namespace
+}
+
+output "ses_dkim_tokens" {
+  value = module.app.ses_dkim_tokens
 }
