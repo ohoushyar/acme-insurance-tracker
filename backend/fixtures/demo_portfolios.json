@@ -1,0 +1,1187 @@
+{
+  "users": [
+    {
+      "email": "casey@example.com",
+      "named_insured": "Mixed CRE Holdings LLC",
+      "properties": [
+        {
+          "label": "Harbor Cove Condominium (3 buildings)",
+          "address": "27282 Canal Road, Orange Beach, AL 36561",
+          "stated_value": "15612455"
+        },
+        {
+          "label": "214 Harbor Ave — Retail Strip",
+          "address": "214 Harbor Ave, Harbor City, CA 90710",
+          "stated_value": "4200000"
+        },
+        {
+          "label": "88 Fenmore Industrial Park",
+          "address": "88 Fenmore Rd, Compton, CA 90220",
+          "stated_value": "11500000"
+        },
+        {
+          "label": "Sundale Apartments (64 units)",
+          "address": "6400 Sundale Blvd, Long Beach, CA 90805",
+          "stated_value": "8900000"
+        },
+        {
+          "label": "Meridian Office Plaza",
+          "address": "1200 Meridian Pkwy, Irvine, CA 92612",
+          "stated_value": "16000000"
+        },
+        {
+          "label": "Coldwater Self-Storage",
+          "address": "55 Coldwater Ave, Burbank, CA 91502",
+          "stated_value": "3100000"
+        },
+        {
+          "label": "Oakridge Warehouse",
+          "address": "910 Oakridge Dr, Fontana, CA 92335",
+          "stated_value": "6400000"
+        },
+        {
+          "label": "Pier 9 Flex",
+          "address": "9 Pier Way, San Pedro, CA 90731",
+          "stated_value": "4800000"
+        },
+        {
+          "label": "Maple Court Garden Apartments",
+          "address": "22 Maple Court, Pasadena, CA 91101",
+          "stated_value": "7200000"
+        },
+        {
+          "label": "Westbrook Neighborhood Retail",
+          "address": "401 Westbrook Ave, Glendale, CA 91203",
+          "stated_value": "3500000"
+        },
+        {
+          "label": "Cypress Creek Self-Storage",
+          "address": "1800 Cypress Creek Rd, Anaheim, CA 92805",
+          "stated_value": "2900000"
+        },
+        {
+          "label": "Ironbound Light Industrial",
+          "address": "700 Ironbound St, Commerce, CA 90040",
+          "stated_value": "8100000"
+        },
+        {
+          "label": "Bayview Office Annex",
+          "address": "50 Bayview Dr, Torrance, CA 90501",
+          "stated_value": "5400000"
+        },
+        {
+          "label": "Larkspur Parcel",
+          "address": "14 Larkspur Lane, Signal Hill, CA 90755",
+          "stated_value": "900000"
+        }
+      ],
+      "series": [
+        { "key": "harbor-cove-property", "label": "Harbor Cove Property" },
+        { "key": "harbor-ave-property", "label": "Harbor Ave Property" },
+        { "key": "coldwater-property", "label": "Coldwater Property" }
+      ],
+      "documents": [
+        {
+          "status": "completed",
+          "original_filename": "harbor-cove-icat-draft.pdf",
+          "extracted": {
+            "policy_number": "01-7590121387-S-02",
+            "named_insured": "Harbor Cove Condominium Association, Inc",
+            "broker": "Risk Placement Services GA",
+            "effective_date": "2026-02-22",
+            "renewal_date": "2027-02-22",
+            "term_premium": "54809",
+            "policy_fee": "270",
+            "total_premium": "55079",
+            "limit_of_insurance": "15612455",
+            "coverage_type": "Property",
+            "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+            "deductibles": [
+              {
+                "peril": "Named Hurricane",
+                "amount": "3.00% Cal. Yr. Aggregate (min $50,000)"
+              },
+              {
+                "peril": "All Other Windstorm/Hail",
+                "amount": "$25,000 per occurrence"
+              },
+              { "peril": "Earthquake", "amount": "$25,000 per occurrence" },
+              { "peril": "All Other Peril", "amount": "$5,000 per occurrence" }
+            ],
+            "locations": [
+              {
+                "label": "Building 1",
+                "address": "27282 Canal Road, Orange Beach, AL 36561"
+              },
+              {
+                "label": "Building 2",
+                "address": "27282 Canal Road, Orange Beach, AL 36561"
+              },
+              {
+                "label": "Building 3",
+                "address": "27282 Canal Road, Orange Beach, AL 36561"
+              }
+            ],
+            "confidence": {
+              "policy_number": 0.95,
+              "named_insured": 0.98,
+              "broker": 0.9,
+              "effective_date": 0.92,
+              "renewal_date": 0.42,
+              "term_premium": 0.9,
+              "policy_fee": 0.88,
+              "total_premium": 0.94,
+              "limit_of_insurance": 0.91,
+              "coverage_type": 0.93,
+              "carriers": 0.9,
+              "deductibles": 0.92,
+              "locations": 0.9
+            }
+          }
+        },
+        {
+          "status": "failed",
+          "original_filename": "unreadable-scan.pdf",
+          "error_code": "EXTRACTION_FAILED",
+          "error_message": "Could not read this PDF. Try a clearer scan or a native digital file."
+        }
+      ],
+      "policies": [
+        {
+          "key": "harbor-cove-2022",
+          "series": "harbor-cove-property",
+          "property_labels": ["Harbor Cove Condominium (3 buildings)"],
+          "effective_date": "2022-02-22",
+          "coverage_type": "Property",
+          "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+          "named_insured": "Harbor Cove Condominium Association, Inc",
+          "broker": "Risk Placement Services GA",
+          "policy_number": "01-7590121387-S-22",
+          "total_premium": "61400",
+          "term_premium": "61130",
+          "policy_fee": "270",
+          "limit_of_insurance": "15612455",
+          "deductibles": [
+            {
+              "peril": "Named Hurricane",
+              "amount": "3.00% Cal. Yr. Aggregate (min $50,000)"
+            },
+            {
+              "peril": "All Other Windstorm/Hail",
+              "amount": "$25,000 per occurrence"
+            }
+          ],
+          "locations": [
+            {
+              "label": "Harbor Cove Condominium (3 buildings)",
+              "address": "27282 Canal Road, Orange Beach, AL 36561"
+            }
+          ]
+        },
+        {
+          "key": "harbor-cove-2023",
+          "series": "harbor-cove-property",
+          "property_labels": ["Harbor Cove Condominium (3 buildings)"],
+          "effective_date": "2023-02-22",
+          "coverage_type": "Property",
+          "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+          "named_insured": "Harbor Cove Condominium Association, Inc",
+          "broker": "Risk Placement Services GA",
+          "policy_number": "01-7590121387-S-23",
+          "total_premium": "74200",
+          "limit_of_insurance": "15612455"
+        },
+        {
+          "key": "harbor-cove-2024",
+          "series": "harbor-cove-property",
+          "property_labels": ["Harbor Cove Condominium (3 buildings)"],
+          "effective_date": "2024-02-22",
+          "coverage_type": "Property",
+          "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+          "named_insured": "Harbor Cove Condominium Association, Inc",
+          "broker": "Risk Placement Services GA",
+          "policy_number": "01-7590121387-S-24",
+          "total_premium": "89600",
+          "limit_of_insurance": "15612455"
+        },
+        {
+          "key": "harbor-cove-2025",
+          "series": "harbor-cove-property",
+          "property_labels": ["Harbor Cove Condominium (3 buildings)"],
+          "effective_date": "2025-02-22",
+          "coverage_type": "Property",
+          "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+          "named_insured": "Harbor Cove Condominium Association, Inc",
+          "broker": "Risk Placement Services GA",
+          "policy_number": "01-7590121387-S-25",
+          "total_premium": "97100",
+          "limit_of_insurance": "15612455"
+        },
+        {
+          "key": "harbor-cove-2026",
+          "series": "harbor-cove-property",
+          "property_labels": ["Harbor Cove Condominium (3 buildings)"],
+          "effective_date": "2026-02-22",
+          "renewal_offset_days": 10,
+          "coverage_type": "Property",
+          "carriers": ["Lloyd's syndicates", "Indian Harbor Insurance Co."],
+          "named_insured": "Harbor Cove Condominium Association, Inc",
+          "broker": "Risk Placement Services GA",
+          "policy_number": "01-7590121387-S-02",
+          "term_premium": "107730",
+          "policy_fee": "270",
+          "total_premium": "108000",
+          "limit_of_insurance": "15612455",
+          "deductibles": [
+            {
+              "peril": "Named Hurricane",
+              "amount": "3.00% Cal. Yr. Aggregate (min $50,000)"
+            },
+            {
+              "peril": "All Other Windstorm/Hail",
+              "amount": "$25,000 per occurrence"
+            },
+            { "peril": "Earthquake", "amount": "$25,000 per occurrence" },
+            { "peril": "All Other Peril", "amount": "$5,000 per occurrence" }
+          ],
+          "locations": [
+            {
+              "label": "Building 1",
+              "address": "27282 Canal Road, Orange Beach, AL 36561"
+            },
+            {
+              "label": "Building 2",
+              "address": "27282 Canal Road, Orange Beach, AL 36561"
+            },
+            {
+              "label": "Building 3",
+              "address": "27282 Canal Road, Orange Beach, AL 36561"
+            }
+          ],
+          "confidence": { "renewal_date": 0.42, "named_insured": 0.98 }
+        },
+        {
+          "key": "harbor-ave-2025",
+          "series": "harbor-ave-property",
+          "property_labels": ["214 Harbor Ave — Retail Strip"],
+          "effective_date": "2025-03-01",
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "policy_number": "LM-HA-2025",
+          "total_premium": "15200",
+          "limit_of_insurance": "4200000",
+          "locations": [
+            {
+              "label": "214 Harbor Ave — Retail Strip",
+              "address": "214 Harbor Ave, Harbor City, CA 90710"
+            }
+          ]
+        },
+        {
+          "key": "harbor-ave-2026",
+          "series": "harbor-ave-property",
+          "property_labels": ["214 Harbor Ave — Retail Strip"],
+          "effective_date": "2026-03-01",
+          "renewal_offset_days": 8,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "policy_number": "LM-HA-2026",
+          "total_premium": "18400",
+          "limit_of_insurance": "4200000",
+          "locations": [
+            {
+              "label": "214 Harbor Ave — Retail Strip",
+              "address": "214 Harbor Ave, Harbor City, CA 90710"
+            }
+          ]
+        },
+        {
+          "key": "harbor-ave-gl",
+          "property_labels": ["214 Harbor Ave — Retail Strip"],
+          "renewal_offset_days": 8,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "policy_number": "TR-HA-GL-2026",
+          "total_premium": "6100",
+          "limit_of_insurance": "2000000"
+        },
+        {
+          "key": "fenmore-property",
+          "property_labels": [
+            "88 Fenmore Industrial Park",
+            "Ironbound Light Industrial"
+          ],
+          "renewal_offset_days": 28,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "policy_number": "CH-FEN-2026",
+          "total_premium": "41200",
+          "limit_of_insurance": "11500000",
+          "locations": [
+            {
+              "label": "88 Fenmore Industrial Park",
+              "address": "88 Fenmore Rd, Compton, CA 90220"
+            },
+            {
+              "label": "Ironbound Light Industrial",
+              "address": "700 Ironbound St, Commerce, CA 90040"
+            }
+          ]
+        },
+        {
+          "key": "fenmore-flood",
+          "property_labels": ["88 Fenmore Industrial Park"],
+          "renewal_offset_days": 120,
+          "coverage_type": "Flood",
+          "carriers": ["NFIP"],
+          "policy_number": "NFIP-FEN-2026",
+          "total_premium": "5200",
+          "limit_of_insurance": "500000"
+        },
+        {
+          "key": "sundale-property",
+          "property_labels": ["Sundale Apartments (64 units)"],
+          "renewal_offset_days": 55,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "policy_number": "NW-SUN-2026",
+          "total_premium": "27600",
+          "limit_of_insurance": "8900000"
+        },
+        {
+          "key": "sundale-gl",
+          "property_labels": ["Sundale Apartments (64 units)"],
+          "renewal_offset_days": 55,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "policy_number": "TR-SUN-GL-2026",
+          "total_premium": "8900",
+          "limit_of_insurance": "1000000"
+        },
+        {
+          "key": "meridian-property",
+          "property_labels": ["Meridian Office Plaza"],
+          "renewal_offset_days": 60,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "policy_number": "ZU-MER-2026",
+          "total_premium": "52300",
+          "limit_of_insurance": "16000000"
+        },
+        {
+          "key": "meridian-umbrella",
+          "property_labels": ["Meridian Office Plaza"],
+          "renewal_offset_days": 60,
+          "coverage_type": "Umbrella",
+          "carriers": ["AIG"],
+          "policy_number": "AIG-MER-UMB-2026",
+          "total_premium": "14700",
+          "limit_of_insurance": "10000000"
+        },
+        {
+          "key": "coldwater-2025",
+          "series": "coldwater-property",
+          "property_labels": ["Coldwater Self-Storage"],
+          "effective_date": "2025-01-18",
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "policy_number": "LM-CW-2025",
+          "total_premium": "9650",
+          "limit_of_insurance": "3100000"
+        },
+        {
+          "key": "coldwater-2026",
+          "series": "coldwater-property",
+          "property_labels": ["Coldwater Self-Storage"],
+          "renewal_offset_days": 200,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "policy_number": "LM-CW-2026",
+          "total_premium": "9800",
+          "limit_of_insurance": "3100000"
+        },
+        {
+          "key": "oakridge-property",
+          "property_labels": ["Oakridge Warehouse"],
+          "renewal_offset_days": 85,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "policy_number": "CH-OAK-2026",
+          "total_premium": "22100",
+          "limit_of_insurance": "6400000"
+        },
+        {
+          "key": "pier9-property",
+          "property_labels": ["Pier 9 Flex"],
+          "renewal_offset_days": -5,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "policy_number": "ZU-PIER9-2026",
+          "total_premium": "16800",
+          "limit_of_insurance": "4800000"
+        },
+        {
+          "key": "maple-property",
+          "property_labels": ["Maple Court Garden Apartments"],
+          "renewal_offset_days": 250,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "policy_number": "NW-MAP-2026",
+          "total_premium": "19400",
+          "limit_of_insurance": "7200000"
+        },
+        {
+          "key": "westbrook-unknown",
+          "property_labels": ["Westbrook Neighborhood Retail"],
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "policy_number": "TR-WEST-2026",
+          "total_premium": "11200",
+          "limit_of_insurance": "3500000",
+          "effective_date": "2026-01-15"
+        },
+        {
+          "key": "cypress-property",
+          "property_labels": ["Cypress Creek Self-Storage"],
+          "renewal_offset_days": 180,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "policy_number": "LM-CYP-2026",
+          "total_premium": "7400",
+          "limit_of_insurance": "2900000"
+        },
+        {
+          "key": "bayview-property",
+          "property_labels": ["Bayview Office Annex"],
+          "renewal_offset_days": 320,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "policy_number": "AIG-BAY-2026",
+          "total_premium": "15600",
+          "limit_of_insurance": "5400000"
+        },
+        {
+          "key": "inland-marine-a",
+          "property_labels": ["Oakridge Warehouse"],
+          "renewal_offset_days": 30,
+          "coverage_type": "Inland Marine",
+          "carriers": ["Travelers"],
+          "policy_number": "TR-IM-A-2026",
+          "total_premium": "4100",
+          "limit_of_insurance": "1500000"
+        },
+        {
+          "key": "inland-marine-b",
+          "property_labels": ["Oakridge Warehouse"],
+          "renewal_offset_days": 140,
+          "coverage_type": "Inland Marine",
+          "carriers": ["Travelers"],
+          "policy_number": "TR-IM-B-2026",
+          "total_premium": "3900",
+          "limit_of_insurance": "1500000"
+        },
+        {
+          "key": "locations-only",
+          "property_labels": [],
+          "renewal_offset_days": 70,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "policy_number": "CH-LOC-2026",
+          "named_insured": "Mixed CRE Holdings LLC",
+          "total_premium": "8800",
+          "limit_of_insurance": "2100000",
+          "locations": [
+            {
+              "label": "Former yard office",
+              "address": "2 Harbor Service Rd, San Pedro, CA 90731"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "email": "alex@example.com",
+      "named_insured": "Harbor Retail Partners LLC",
+      "properties": [
+        {
+          "label": "214 Harbor Ave — Retail Strip",
+          "address": "214 Harbor Ave, Harbor City, CA 90710",
+          "stated_value": "4200000"
+        },
+        {
+          "label": "Harbor Court Shops",
+          "address": "80 Harbor Court, Harbor City, CA 90710",
+          "stated_value": "2800000"
+        },
+        {
+          "label": "Seaview Strip Center",
+          "address": "300 Seaview Blvd, San Pedro, CA 90731",
+          "stated_value": "3600000"
+        },
+        {
+          "label": "Anchor Plaza",
+          "address": "12 Anchor Way, Wilmington, CA 90744",
+          "stated_value": "5100000"
+        },
+        {
+          "label": "Dockside Retail",
+          "address": "400 Dockside Dr, Long Beach, CA 90802",
+          "stated_value": "4400000"
+        },
+        {
+          "label": "Lantern Lane Shops",
+          "address": "18 Lantern Lane, Redondo Beach, CA 90277",
+          "stated_value": "2700000"
+        },
+        {
+          "label": "Quay Market",
+          "address": "9 Quay St, San Pedro, CA 90731",
+          "stated_value": "1900000"
+        },
+        {
+          "label": "Pilot House Retail",
+          "address": "71 Pilot Ave, Harbor City, CA 90710",
+          "stated_value": "2300000"
+        },
+        {
+          "label": "Beacon Corner",
+          "address": "1 Beacon St, San Pedro, CA 90731",
+          "stated_value": "1500000"
+        },
+        {
+          "label": "Wharf Walk",
+          "address": "220 Wharf Walk, Long Beach, CA 90802",
+          "stated_value": "3300000"
+        },
+        {
+          "label": "Spare Lot A",
+          "address": "5 Spare Lot, Harbor City, CA 90710",
+          "stated_value": "400000"
+        }
+      ],
+      "policies": [
+        {
+          "key": "alex-harbor-ave",
+          "property_labels": ["214 Harbor Ave — Retail Strip"],
+          "renewal_offset_days": 9,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "18400",
+          "limit_of_insurance": "4200000"
+        },
+        {
+          "key": "alex-harbor-gl",
+          "property_labels": ["214 Harbor Ave — Retail Strip"],
+          "renewal_offset_days": 9,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "6100",
+          "limit_of_insurance": "2000000"
+        },
+        {
+          "key": "alex-court",
+          "property_labels": ["Harbor Court Shops"],
+          "renewal_offset_days": 27,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "9800",
+          "limit_of_insurance": "2800000"
+        },
+        {
+          "key": "alex-seaview",
+          "property_labels": ["Seaview Strip Center"],
+          "renewal_offset_days": 58,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "14100",
+          "limit_of_insurance": "3600000"
+        },
+        {
+          "key": "alex-anchor",
+          "property_labels": ["Anchor Plaza"],
+          "renewal_offset_days": 88,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "17600",
+          "limit_of_insurance": "5100000"
+        },
+        {
+          "key": "alex-dockside",
+          "property_labels": ["Dockside Retail"],
+          "renewal_offset_days": 140,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "total_premium": "15200",
+          "limit_of_insurance": "4400000"
+        },
+        {
+          "key": "alex-lantern",
+          "property_labels": ["Lantern Lane Shops"],
+          "renewal_offset_days": 200,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "8700",
+          "limit_of_insurance": "2700000"
+        },
+        {
+          "key": "alex-quay",
+          "property_labels": ["Quay Market"],
+          "renewal_offset_days": 260,
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "total_premium": "6400",
+          "limit_of_insurance": "1900000"
+        },
+        {
+          "key": "alex-pilot",
+          "property_labels": ["Pilot House Retail"],
+          "renewal_offset_days": 310,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "7200",
+          "limit_of_insurance": "2300000"
+        },
+        {
+          "key": "alex-beacon",
+          "property_labels": ["Beacon Corner"],
+          "renewal_offset_days": 12,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "5100",
+          "limit_of_insurance": "1500000"
+        },
+        {
+          "key": "alex-wharf",
+          "property_labels": ["Wharf Walk"],
+          "renewal_offset_days": 175,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "11900",
+          "limit_of_insurance": "3300000"
+        },
+        {
+          "key": "alex-wharf-gl",
+          "property_labels": ["Wharf Walk"],
+          "renewal_offset_days": 175,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "4300",
+          "limit_of_insurance": "1000000"
+        }
+      ]
+    },
+    {
+      "email": "jordan@example.com",
+      "named_insured": "Sundale Multifamily Holdings LLC",
+      "properties": [
+        {
+          "label": "Sundale Apartments (64 units)",
+          "address": "6400 Sundale Blvd, Long Beach, CA 90805",
+          "stated_value": "8900000"
+        },
+        {
+          "label": "Sundale West",
+          "address": "100 Sundale West, Long Beach, CA 90805",
+          "stated_value": "6100000"
+        },
+        {
+          "label": "Cedar Court Apartments",
+          "address": "44 Cedar Court, Lakewood, CA 90712",
+          "stated_value": "4700000"
+        },
+        {
+          "label": "Poplar Gardens",
+          "address": "800 Poplar Ave, Compton, CA 90221",
+          "stated_value": "3900000"
+        },
+        {
+          "label": "Elmwood Residences",
+          "address": "16 Elmwood Dr, Carson, CA 90745",
+          "stated_value": "5200000"
+        },
+        {
+          "label": "Ridgeview Flats",
+          "address": "77 Ridgeview Rd, Torrance, CA 90501",
+          "stated_value": "6800000"
+        },
+        {
+          "label": "Harbor House Multifamily",
+          "address": "210 Harbor House, San Pedro, CA 90731",
+          "stated_value": "4100000"
+        },
+        {
+          "label": "Magnolia Court",
+          "address": "9 Magnolia Court, Gardena, CA 90247",
+          "stated_value": "3600000"
+        },
+        {
+          "label": "Willow Park Apartments",
+          "address": "300 Willow Park, Paramount, CA 90723",
+          "stated_value": "4500000"
+        },
+        {
+          "label": "Ashford Lane",
+          "address": "12 Ashford Lane, Bellflower, CA 90706",
+          "stated_value": "2900000"
+        },
+        {
+          "label": "Unassigned Pad",
+          "address": "1 Unassigned Pad, Long Beach, CA 90805",
+          "stated_value": "250000"
+        }
+      ],
+      "policies": [
+        {
+          "key": "jordan-sundale",
+          "property_labels": ["Sundale Apartments (64 units)"],
+          "renewal_offset_days": 10,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "27600",
+          "limit_of_insurance": "8900000"
+        },
+        {
+          "key": "jordan-sundale-gl",
+          "property_labels": ["Sundale Apartments (64 units)"],
+          "renewal_offset_days": 10,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "8900",
+          "limit_of_insurance": "1000000"
+        },
+        {
+          "key": "jordan-west",
+          "property_labels": ["Sundale West"],
+          "renewal_offset_days": 29,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "19800",
+          "limit_of_insurance": "6100000"
+        },
+        {
+          "key": "jordan-cedar",
+          "property_labels": ["Cedar Court Apartments"],
+          "renewal_offset_days": 60,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "15400",
+          "limit_of_insurance": "4700000"
+        },
+        {
+          "key": "jordan-poplar",
+          "property_labels": ["Poplar Gardens"],
+          "renewal_offset_days": 82,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "12100",
+          "limit_of_insurance": "3900000"
+        },
+        {
+          "key": "jordan-elmwood",
+          "property_labels": ["Elmwood Residences"],
+          "renewal_offset_days": 150,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "total_premium": "16700",
+          "limit_of_insurance": "5200000"
+        },
+        {
+          "key": "jordan-ridgeview",
+          "property_labels": ["Ridgeview Flats"],
+          "renewal_offset_days": 210,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "21300",
+          "limit_of_insurance": "6800000"
+        },
+        {
+          "key": "jordan-harbor-house",
+          "property_labels": ["Harbor House Multifamily"],
+          "renewal_offset_days": 270,
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "total_premium": "13200",
+          "limit_of_insurance": "4100000"
+        },
+        {
+          "key": "jordan-magnolia",
+          "property_labels": ["Magnolia Court"],
+          "renewal_offset_days": 330,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "10900",
+          "limit_of_insurance": "3600000"
+        },
+        {
+          "key": "jordan-willow",
+          "property_labels": ["Willow Park Apartments"],
+          "renewal_offset_days": 18,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "14800",
+          "limit_of_insurance": "4500000"
+        },
+        {
+          "key": "jordan-ashford",
+          "property_labels": ["Ashford Lane"],
+          "renewal_offset_days": 190,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "8600",
+          "limit_of_insurance": "2900000"
+        },
+        {
+          "key": "jordan-ashford-gl",
+          "property_labels": ["Ashford Lane"],
+          "renewal_offset_days": 190,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "3100",
+          "limit_of_insurance": "1000000"
+        }
+      ]
+    },
+    {
+      "email": "morgan@example.com",
+      "named_insured": "Fenmore Industrial LLC",
+      "properties": [
+        {
+          "label": "88 Fenmore Industrial Park",
+          "address": "88 Fenmore Rd, Compton, CA 90220",
+          "stated_value": "11500000"
+        },
+        {
+          "label": "Fenmore North Warehouse",
+          "address": "120 Fenmore North, Compton, CA 90220",
+          "stated_value": "7200000"
+        },
+        {
+          "label": "Trackside Distribution",
+          "address": "50 Trackside Ave, Vernon, CA 90058",
+          "stated_value": "9800000"
+        },
+        {
+          "label": "Pacific Cross-Dock",
+          "address": "8 Pacific Cross, Commerce, CA 90040",
+          "stated_value": "5400000"
+        },
+        {
+          "label": "Midway Cold Storage",
+          "address": "400 Midway, Carson, CA 90746",
+          "stated_value": "8700000"
+        },
+        {
+          "label": "Slauson Flex",
+          "address": "2100 Slauson Ave, Huntington Park, CA 90255",
+          "stated_value": "4100000"
+        },
+        {
+          "label": "Alameda Yard",
+          "address": "900 Alameda St, Los Angeles, CA 90021",
+          "stated_value": "6300000"
+        },
+        {
+          "label": "Bandini Logistics",
+          "address": "33 Bandini Blvd, Vernon, CA 90058",
+          "stated_value": "7600000"
+        },
+        {
+          "label": "Garfield Industrial",
+          "address": "1500 Garfield Ave, Commerce, CA 90040",
+          "stated_value": "5200000"
+        },
+        {
+          "label": "Soto Street Warehouse",
+          "address": "700 Soto St, Los Angeles, CA 90023",
+          "stated_value": "4800000"
+        },
+        {
+          "label": "Idle Spur Lot",
+          "address": "2 Idle Spur, Compton, CA 90220",
+          "stated_value": "350000"
+        }
+      ],
+      "policies": [
+        {
+          "key": "morgan-fenmore",
+          "property_labels": ["88 Fenmore Industrial Park"],
+          "renewal_offset_days": 8,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "41200",
+          "limit_of_insurance": "11500000"
+        },
+        {
+          "key": "morgan-fenmore-flood",
+          "property_labels": ["88 Fenmore Industrial Park"],
+          "renewal_offset_days": 200,
+          "coverage_type": "Flood",
+          "carriers": ["NFIP"],
+          "total_premium": "5200",
+          "limit_of_insurance": "500000"
+        },
+        {
+          "key": "morgan-north",
+          "property_labels": ["Fenmore North Warehouse"],
+          "renewal_offset_days": 26,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "24800",
+          "limit_of_insurance": "7200000"
+        },
+        {
+          "key": "morgan-trackside",
+          "property_labels": ["Trackside Distribution"],
+          "renewal_offset_days": 59,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "total_premium": "33100",
+          "limit_of_insurance": "9800000"
+        },
+        {
+          "key": "morgan-crossdock",
+          "property_labels": ["Pacific Cross-Dock"],
+          "renewal_offset_days": 90,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "18700",
+          "limit_of_insurance": "5400000"
+        },
+        {
+          "key": "morgan-cold",
+          "property_labels": ["Midway Cold Storage"],
+          "renewal_offset_days": 130,
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "total_premium": "29400",
+          "limit_of_insurance": "8700000"
+        },
+        {
+          "key": "morgan-slauson",
+          "property_labels": ["Slauson Flex"],
+          "renewal_offset_days": 170,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "14200",
+          "limit_of_insurance": "4100000"
+        },
+        {
+          "key": "morgan-alameda",
+          "property_labels": ["Alameda Yard"],
+          "renewal_offset_days": 230,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "21600",
+          "limit_of_insurance": "6300000"
+        },
+        {
+          "key": "morgan-bandini",
+          "property_labels": ["Bandini Logistics"],
+          "renewal_offset_days": 280,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "25900",
+          "limit_of_insurance": "7600000"
+        },
+        {
+          "key": "morgan-garfield",
+          "property_labels": ["Garfield Industrial"],
+          "renewal_offset_days": 340,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "total_premium": "17300",
+          "limit_of_insurance": "5200000"
+        },
+        {
+          "key": "morgan-soto",
+          "property_labels": ["Soto Street Warehouse"],
+          "renewal_offset_days": 14,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "16500",
+          "limit_of_insurance": "4800000"
+        },
+        {
+          "key": "morgan-soto-gl",
+          "property_labels": ["Soto Street Warehouse"],
+          "renewal_offset_days": 14,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "5400",
+          "limit_of_insurance": "2000000"
+        }
+      ]
+    },
+    {
+      "email": "riley@example.com",
+      "named_insured": "Meridian Office Partners LLC",
+      "properties": [
+        {
+          "label": "Meridian Office Plaza",
+          "address": "1200 Meridian Pkwy, Irvine, CA 92612",
+          "stated_value": "16000000"
+        },
+        {
+          "label": "Meridian Tower Two",
+          "address": "1210 Meridian Pkwy, Irvine, CA 92612",
+          "stated_value": "12500000"
+        },
+        {
+          "label": "Spectrum Campus",
+          "address": "40 Spectrum, Irvine, CA 92618",
+          "stated_value": "9800000"
+        },
+        {
+          "label": "Jamboree Commons",
+          "address": "250 Jamboree Rd, Newport Beach, CA 92660",
+          "stated_value": "8700000"
+        },
+        {
+          "label": "MacArthur Court",
+          "address": "5 MacArthur Court, Newport Beach, CA 92660",
+          "stated_value": "11200000"
+        },
+        {
+          "label": "Von Karman Center",
+          "address": "300 Von Karman, Irvine, CA 92606",
+          "stated_value": "7400000"
+        },
+        {
+          "label": "Bake Parkway Offices",
+          "address": "88 Bake Pkwy, Irvine, CA 92618",
+          "stated_value": "6100000"
+        },
+        {
+          "label": "Alton Square",
+          "address": "19 Alton Pkwy, Irvine, CA 92606",
+          "stated_value": "5300000"
+        },
+        {
+          "label": "Sand Canyon Campus",
+          "address": "100 Sand Canyon, Irvine, CA 92618",
+          "stated_value": "9100000"
+        },
+        {
+          "label": "Barranca Tech",
+          "address": "60 Barranca Pkwy, Irvine, CA 92618",
+          "stated_value": "6800000"
+        },
+        {
+          "label": "Future Pad B",
+          "address": "2 Future Pad, Irvine, CA 92612",
+          "stated_value": "800000"
+        }
+      ],
+      "policies": [
+        {
+          "key": "riley-plaza",
+          "property_labels": ["Meridian Office Plaza"],
+          "renewal_offset_days": 10,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "52300",
+          "limit_of_insurance": "16000000"
+        },
+        {
+          "key": "riley-plaza-umb",
+          "property_labels": ["Meridian Office Plaza"],
+          "renewal_offset_days": 10,
+          "coverage_type": "Umbrella",
+          "carriers": ["AIG"],
+          "total_premium": "14700",
+          "limit_of_insurance": "10000000"
+        },
+        {
+          "key": "riley-tower",
+          "property_labels": ["Meridian Tower Two"],
+          "renewal_offset_days": 28,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "38900",
+          "limit_of_insurance": "12500000"
+        },
+        {
+          "key": "riley-spectrum",
+          "property_labels": ["Spectrum Campus"],
+          "renewal_offset_days": 60,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "27600",
+          "limit_of_insurance": "9800000"
+        },
+        {
+          "key": "riley-jamboree",
+          "property_labels": ["Jamboree Commons"],
+          "renewal_offset_days": 84,
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "total_premium": "24100",
+          "limit_of_insurance": "8700000"
+        },
+        {
+          "key": "riley-macarthur",
+          "property_labels": ["MacArthur Court"],
+          "renewal_offset_days": 155,
+          "coverage_type": "Property",
+          "carriers": ["Nationwide"],
+          "total_premium": "31200",
+          "limit_of_insurance": "11200000"
+        },
+        {
+          "key": "riley-vonkarman",
+          "property_labels": ["Von Karman Center"],
+          "renewal_offset_days": 205,
+          "coverage_type": "Property",
+          "carriers": ["Zurich"],
+          "total_premium": "19800",
+          "limit_of_insurance": "7400000"
+        },
+        {
+          "key": "riley-bake",
+          "property_labels": ["Bake Parkway Offices"],
+          "renewal_offset_days": 255,
+          "coverage_type": "Property",
+          "carriers": ["AIG"],
+          "total_premium": "16400",
+          "limit_of_insurance": "6100000"
+        },
+        {
+          "key": "riley-alton",
+          "property_labels": ["Alton Square"],
+          "renewal_offset_days": 305,
+          "coverage_type": "Property",
+          "carriers": ["Chubb"],
+          "total_premium": "13900",
+          "limit_of_insurance": "5300000"
+        },
+        {
+          "key": "riley-sand",
+          "property_labels": ["Sand Canyon Campus"],
+          "renewal_offset_days": 16,
+          "coverage_type": "Property",
+          "carriers": ["Liberty Mutual"],
+          "total_premium": "25400",
+          "limit_of_insurance": "9100000"
+        },
+        {
+          "key": "riley-barranca",
+          "property_labels": ["Barranca Tech"],
+          "renewal_offset_days": 365,
+          "coverage_type": "Property",
+          "carriers": ["Travelers"],
+          "total_premium": "18100",
+          "limit_of_insurance": "6800000"
+        },
+        {
+          "key": "riley-barranca-gl",
+          "property_labels": ["Barranca Tech"],
+          "renewal_offset_days": 365,
+          "coverage_type": "General Liability",
+          "carriers": ["Travelers"],
+          "total_premium": "6200",
+          "limit_of_insurance": "2000000"
+        }
+      ]
+    }
+  ]
+}

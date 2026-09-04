@@ -54,6 +54,28 @@ npm run dev
 Open http://localhost:5173. Vite proxies `/api` to the API on port 8000 so the
 session cookie stays first-party.
 
+## Demo accounts (local only)
+
+Load five synthetic portfolios (properties, policies, YoY series, upload jobs):
+
+```bash
+make load-fake-data
+```
+
+Password for all five: `demo-pass-1`
+
+| Email | Notes |
+|---|---|
+| `casey@example.com` | Full walkthrough (Harbor Cove, urgency buckets, YoY, reminders, review job) |
+| `alex@example.com` | Harbor retail portfolio |
+| `jordan@example.com` | Sundale multifamily |
+| `morgan@example.com` | Fenmore industrial |
+| `riley@example.com` | Meridian office |
+
+Re-running wipes only these emails and reloads them. Do not run the seed against a non-local database. See [docs/plans/13-dev-demo-fixtures.md](docs/plans/13-dev-demo-fixtures.md).
+
+Walkthrough: log in as casey → Home (groups, stats, YoY badges) → Reminders → Harbor Cove detail + chart → Properties → Uploads (failed job + Review) → Profile → log in as alex.
+
 Uploaded PDFs go to MinIO (`insurance-docs` bucket) under
 `{user_id}/{document_id}.pdf`. From the host, MinIO is at
 http://localhost:9100 (console http://localhost:9101). Extraction jobs

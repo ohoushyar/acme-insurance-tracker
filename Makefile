@@ -1,4 +1,4 @@
-.PHONY: test backend-test frontend-test serve frontend
+.PHONY: test backend-test frontend-test serve frontend load-fake-data
 
 SHELL := /bin/bash
 
@@ -37,3 +37,10 @@ serve: .env
 
 frontend: frontend/node_modules
 	cd frontend && npm run dev
+
+# Wipe and reload the five local demo accounts (see README). Idempotent.
+load-fake-data: .env
+	$(COMPOSE) up -d --wait postgres redis minio
+	$(COMPOSE) run --rm --no-deps minio-init
+	cd backend && uv sync && uv run alembic upgrade head
+	cd backend && uv run python scripts/seed_demo.py
