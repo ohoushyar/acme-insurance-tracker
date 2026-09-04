@@ -14,7 +14,7 @@ from pydantic import ValidationError
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 
-from app.extraction.llm import LLM_REQUEST_TIMEOUT_MS
+from app.extraction.llm import LLM_REQUEST_TIMEOUT_MS, LLM_TIMEOUT_MESSAGE
 from app.extraction.schema import ExtractedPolicy
 
 MIN_TEXT_CHARS = 40
@@ -166,9 +166,7 @@ async def extract_fields_node(
             "extracted": None,
             "status": "failed",
             "error_code": "EXTRACTION_FAILED",
-            "error_message": (
-                "The extraction service did not respond in time. Try again."
-            ),
+            "error_message": LLM_TIMEOUT_MESSAGE,
         }
     except (ValidationError, OutputParserException):
         return {

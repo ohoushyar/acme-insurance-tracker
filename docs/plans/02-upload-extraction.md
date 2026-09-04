@@ -129,8 +129,9 @@ sized for a 35-page extract (order of minutes, not seconds).
 `ChatOpenRouter` is built with a 10s connect / 120s read HTTP timeout.
 The graph invokes the model in a worker thread under `asyncio.wait_for`
 so a blocked TLS handshake cannot freeze the Dramatiq event loop past
-120s. Timeouts mark the document failed (no silent hang). Dramatiq
-still retries other transient OpenRouter/S3 errors.
+120s. Timeouts mark the document failed (no silent hang). Dramatiq's
+actor time limit is 3 minutes; `TimeLimitExceeded` is not retried.
+Dramatiq still retries other transient OpenRouter/S3 errors.
 
 Structured logs: `document_id`, `user_id`, `status`, model name —
 **not** PDF text or extracted premium/address payloads.

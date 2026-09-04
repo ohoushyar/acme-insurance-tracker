@@ -27,6 +27,7 @@ def test_build_extraction_llm_sets_http_timeout_and_skips_sdk_retries() -> None:
     assert llm.max_retries == 0
     assert llm.model_name == "openai/gpt-4o-mini"
     assert llm.temperature == 0
+    assert llm.client.sdk_configuration.timeout_ms == 120_000
 
 
 def test_default_tls_seclevel_keeps_full_openssl_verification() -> None:

@@ -5,10 +5,15 @@ from uuid import UUID
 
 import dramatiq
 import structlog
+from dramatiq.middleware.time_limit import TimeLimitExceeded
 
 from app.config import get_settings
 from app.db import create_engine, create_session_factory, set_tenant
-from app.extraction.llm import LLM_REQUEST_TIMEOUT_MS, build_extraction_llm
+from app.extraction.llm import (
+    LLM_REQUEST_TIMEOUT_MS,
+    LLM_TIMEOUT_MESSAGE,
+    build_extraction_llm,
+)
 from app.queue.broker import broker
 from app.repositories import documents as documents_repo
 from app.storage import StorageKeyError, assert_owned_storage_key, build_document_store
@@ -18,7 +23,7 @@ log = structlog.get_logger("extraction")
 _ = broker
 
 MAX_RETRIES = 3
-EXTRACT_TIME_LIMIT_MS = 10 * 60 * 1000
+EXTRACT_TIME_LIMIT_MS = 3 * 60 * 1000
 
 
 class NonRetryableExtractionError(Exception):
@@ -207,4 +212,20 @@ async def _extract_document(document_id: str, user_id: str) -> None:
     time_limit=EXTRACT_TIME_LIMIT_MS,
 )
 def extract_document(document_id: str, user_id: str) -> None:
-    asyncio.run(_extract_document(document_id, user_id))
+    try:
+        asyncio.run(_extract_document(document_id, user_id))
+    except TimeLimitExceeded:
+        log.warning(
+            "extraction_time_limit",
+            document_id=document_id,
+            user_id=user_id,
+        )
+        asyncio.run(
+            _persist_status(
+                document_id,
+                user_id,
+                status="failed",
+                error_code="EXTRACTION_FAILED",
+                error_message=LLM_TIMEOUT_MESSAGE,
+            )
+        )

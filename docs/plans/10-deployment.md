@@ -80,8 +80,9 @@ gone. Does not touch Compose volumes.
 
 If the worker log stops at `extraction_llm_invoke`, OpenRouter HTTPS is
 blocked (egress or TLS intercept). After redeploy the job fails within
-120s with `extraction_llm_timeout` instead of sitting until Dramatiq's
-10-minute limit.
+120s (`extraction_llm_timeout`). Dramatiq's actor time limit is 3
+minutes and `TimeLimitExceeded` marks the document failed without
+retrying.
 
 Local k8s and Compose set `OPENROUTER_TLS_SECLEVEL=1` so OpenSSL 3 still
 verifies `openrouter.ai` but accepts TLS-intercept leaf certs with

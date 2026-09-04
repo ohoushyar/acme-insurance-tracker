@@ -9,6 +9,7 @@ from app.config import Settings
 
 LLM_REQUEST_TIMEOUT_MS = 120_000
 LLM_MAX_RETRIES = 0
+LLM_TIMEOUT_MESSAGE = "The extraction service did not respond in time. Try again."
 APP_TITLE = "Insurance Tracker"
 
 
