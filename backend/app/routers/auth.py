@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.deps import get_current_user, get_db, get_redis
 from app.models import User
-from app.schemas import Credentials, UserOut
+from app.schemas import ChangePassword, Credentials, UserOut
 from app.services import auth as auth_service
 from app.sessions import delete_session, new_session_token, store_session
 
@@ -91,3 +91,15 @@ async def logout(
 @router.get("/me", response_model=UserOut)
 async def me(user: Annotated[UserOut, Depends(get_current_user)]) -> UserOut:
     return user
+
+
+@router.post("/password", status_code=204)
+async def change_password(
+    body: ChangePassword,
+    user: Annotated[UserOut, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> Response:
+    await auth_service.change_password(
+        session, user.id, body.current_password, body.new_password
+    )
+    return Response(status_code=204)

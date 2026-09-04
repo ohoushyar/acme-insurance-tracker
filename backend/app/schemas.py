@@ -29,6 +29,11 @@ class Credentials(BaseModel):
         return email
 
 
+class ChangePassword(BaseModel):
+    current_password: str = Field(min_length=8)
+    new_password: str = Field(min_length=8)
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

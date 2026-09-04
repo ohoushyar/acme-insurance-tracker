@@ -1,8 +1,16 @@
+from uuid import UUID
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.errors import AppError
 from app.models import User
-from app.repositories.users import DuplicateEmailError, create, get_by_email
+from app.repositories.users import (
+    DuplicateEmailError,
+    create,
+    get_by_email,
+    get_by_id,
+    set_password_hash,
+)
 from app.security import hash_password, verify_password
 
 
@@ -20,3 +28,12 @@ async def login(session: AsyncSession, email: str, password: str) -> User:
     if user is None or not verify_password(user.password_hash, password):
         raise AppError(401, "INVALID_CREDENTIALS", "Email or password is incorrect.")
     return user
+
+
+async def change_password(
+    session: AsyncSession, user_id: UUID, current_password: str, new_password: str
+) -> None:
+    user = await get_by_id(session, user_id)
+    if user is None or not verify_password(user.password_hash, current_password):
+        raise AppError(401, "INVALID_CREDENTIALS", "Current password is incorrect.")
+    await set_password_hash(session, user, hash_password(new_password))
