@@ -41,8 +41,8 @@ resource "aws_route53_record" "ses_dkim" {
     aws_sesv2_email_identity.from[0].dkim_signing_attributes[0].tokens[count.index],
     local.ses_domain,
   )
-  type    = "CNAME"
-  ttl     = 600
+  type = "CNAME"
+  ttl  = 600
   records = [
     format(
       "%s.dkim.amazonses.com",
