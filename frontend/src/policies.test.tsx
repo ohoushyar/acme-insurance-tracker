@@ -132,10 +132,9 @@ describe("saved policies", () => {
     });
 
     renderAt("/");
-    expect(
-      await screen.findByRole("heading", { name: /saved policies/i }),
-    ).toBeInTheDocument();
-    const section = screen.getByRole("region", { name: /saved policies/i });
+    const section = await screen.findByRole("region", {
+      name: /saved policies/i,
+    });
     expect(section).toHaveTextContent("Harbor Cove LLC");
     expect(section).toHaveTextContent("HCL-2024-4412");
     expect(section).toHaveTextContent("Property");
@@ -143,6 +142,9 @@ describe("saved policies", () => {
     expect(section).toHaveTextContent("186500.00");
     expect(section).toHaveTextContent("Building 1");
     expect(section).toHaveTextContent("Building 3");
+    expect(
+      screen.getByRole("region", { name: /portfolio summary/i }),
+    ).toBeInTheDocument();
   });
 
   it("does not render another user's policies from the list payload", async () => {
@@ -226,7 +228,7 @@ describe("saved policies", () => {
     );
 
     expect(
-      await screen.findByRole("heading", { name: /saved policies/i }),
+      await screen.findByRole("region", { name: /saved policies/i }),
     ).toBeInTheDocument();
     const section = screen.getByRole("region", { name: /saved policies/i });
     expect(section).toHaveTextContent("Harbor Cove HOA");
@@ -266,7 +268,7 @@ describe("saved policies", () => {
       await screen.findByText("Unable to load saved policies."),
     ).toBeInTheDocument();
     expect(
-      screen.queryByRole("heading", { name: /saved policies/i }),
+      screen.queryByRole("region", { name: /saved policies/i }),
     ).not.toBeInTheDocument();
   });
 

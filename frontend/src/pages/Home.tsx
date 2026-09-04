@@ -21,6 +21,15 @@ import {
 import { useAuth } from "../auth";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { Shell } from "../components/Shell";
+import {
+  URGENCY_LABELS,
+  URGENCY_ORDER,
+  daysUntil,
+  formatMoney,
+  groupPolicies,
+  portfolioStats,
+  type UrgencyKey,
+} from "../urgency";
 
 const POLL_MS = 2000;
 
@@ -63,10 +72,12 @@ function PolicyCard({
   policy,
   properties,
   onDeleted,
+  today,
 }: {
   policy: Policy;
   properties: Property[];
   onDeleted: (id: string) => void;
+  today: Date;
 }) {
   const [confirming, setConfirming] = useState(false);
   const [deleteError, setDeleteError] = useState("");
@@ -76,6 +87,7 @@ function PolicyCard({
     ...attachedLabels(policy, properties),
     ...locationLabels(policy),
   ];
+  const days = daysUntil(policy.renewal_date, today);
 
   async function onConfirmDelete(): Promise<void> {
     setDeleteError("");
@@ -106,6 +118,23 @@ function PolicyCard({
           : null}
         {policy.total_premium ? <span>{policy.total_premium}</span> : null}
       </p>
+      {days !== null ? (
+        <p className="muted">
+          {days < 0
+            ? `${Math.abs(days)} days past renewal`
+            : `${days} days until renewal`}
+        </p>
+      ) : null}
+      {typeof policy.yoy_change_pct === "number" ? (
+        <p
+          className={
+            policy.yoy_flagged ? "yoy-badge yoy-badge-flagged" : "yoy-badge"
+          }
+        >
+          {policy.yoy_change_pct > 0 ? "+" : ""}
+          {policy.yoy_change_pct.toFixed(1)}% YoY
+        </p>
+      ) : null}
       {places.length > 0 ? <p className="muted">{places.join(" · ")}</p> : null}
       {deleteError ? <p className="error">{deleteError}</p> : null}
       {confirming ? (
@@ -117,6 +146,9 @@ function PolicyCard({
         />
       ) : (
         <div className="card-actions">
+          <Link to={`/policies/${policy.id}`} aria-label={`View ${title}`}>
+            View
+          </Link>
           <Link to={`/policies/${policy.id}/edit`} aria-label={`Edit ${title}`}>
             Edit
           </Link>
@@ -131,6 +163,91 @@ function PolicyCard({
         </div>
       )}
     </article>
+  );
+}
+
+function StatStrip({
+  totalPremium,
+  renewingWithin30,
+  renewingWithin90,
+  premiumUpYoY,
+}: {
+  totalPremium: number;
+  renewingWithin30: number;
+  renewingWithin90: number;
+  premiumUpYoY: number;
+}) {
+  return (
+    <div className="stat-strip" role="region" aria-label="Portfolio summary">
+      <div className="stat">
+        <div className="stat-label">Total annual premium</div>
+        <div className="stat-value">{formatMoney(totalPremium)}</div>
+      </div>
+      <div className="stat">
+        <div className="stat-label">Renewing within 30 days</div>
+        <div
+          className={
+            renewingWithin30 > 0 ? "stat-value stat-value-urgent" : "stat-value"
+          }
+        >
+          {renewingWithin30}
+        </div>
+      </div>
+      <div className="stat">
+        <div className="stat-label">Renewing within 90 days</div>
+        <div
+          className={
+            renewingWithin90 > 0 ? "stat-value stat-value-soon" : "stat-value"
+          }
+        >
+          {renewingWithin90}
+        </div>
+      </div>
+      <div className="stat">
+        <div className="stat-label">Premium up 10%+</div>
+        <div
+          className={
+            premiumUpYoY > 0 ? "stat-value stat-value-urgent" : "stat-value"
+          }
+        >
+          {premiumUpYoY}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UrgencySection({
+  urgencyKey,
+  policies,
+  properties,
+  today,
+  onDeleted,
+}: {
+  urgencyKey: UrgencyKey;
+  policies: Policy[];
+  properties: Property[];
+  today: Date;
+  onDeleted: (id: string) => void;
+}) {
+  if (policies.length === 0) {
+    return null;
+  }
+  return (
+    <section className="urgency-group" aria-label={URGENCY_LABELS[urgencyKey]}>
+      <h2 className={`urgency-heading urgency-${urgencyKey}`}>
+        {URGENCY_LABELS[urgencyKey]}
+      </h2>
+      {policies.map((policy) => (
+        <PolicyCard
+          key={policy.id}
+          policy={policy}
+          properties={properties}
+          today={today}
+          onDeleted={onDeleted}
+        />
+      ))}
+    </section>
   );
 }
 
@@ -309,6 +426,14 @@ export function Home() {
     return <Navigate to="/login" replace />;
   }
 
+  const today = new Date();
+  const stats = portfolioStats(policies, today);
+  const groups = groupPolicies(policies, today);
+
+  function removePolicy(id: string): void {
+    setPolicies((current) => current.filter((item) => item.id !== id));
+  }
+
   return (
     <Shell onLogout={logout}>
       <h1>Your insurance portfolio</h1>
@@ -343,21 +468,24 @@ export function Home() {
       {policyError ? <p className="error">{policyError}</p> : null}
       {propertyError ? <p className="error">{propertyError}</p> : null}
       {policies.length > 0 ? (
-        <section aria-label="Saved policies" className="job-list">
-          <h2>Saved policies</h2>
-          {policies.map((policy) => (
-            <PolicyCard
-              key={policy.id}
-              policy={policy}
+        <div aria-label="Saved policies" role="region" className="job-list">
+          <StatStrip
+            totalPremium={stats.totalPremium}
+            renewingWithin30={stats.renewingWithin30}
+            renewingWithin90={stats.renewingWithin90}
+            premiumUpYoY={stats.premiumUpYoY}
+          />
+          {URGENCY_ORDER.map((key) => (
+            <UrgencySection
+              key={key}
+              urgencyKey={key}
+              policies={groups[key]}
               properties={properties}
-              onDeleted={(id) =>
-                setPolicies((current) =>
-                  current.filter((item) => item.id !== id),
-                )
-              }
+              today={today}
+              onDeleted={removePolicy}
             />
           ))}
-        </section>
+        </div>
       ) : null}
       {jobs.length === 0 && !error ? (
         <p className="muted">No documents uploaded yet.</p>
