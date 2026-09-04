@@ -49,5 +49,11 @@ async def test_ensure_login_role_creates_missing_role() -> None:
             assert found == 1
     finally:
         async with engine.begin() as conn:
-            await conn.execute(text(f"DROP ROLE IF EXISTS {role}"))
+            exists = await conn.scalar(
+                text("SELECT 1 FROM pg_roles WHERE rolname = :role"),
+                {"role": role},
+            )
+            if exists:
+                await conn.execute(text(f"DROP OWNED BY {role}"))
+                await conn.execute(text(f"DROP ROLE {role}"))
         await engine.dispose()
