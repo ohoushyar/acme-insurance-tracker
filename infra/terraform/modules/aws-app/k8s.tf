@@ -240,7 +240,7 @@ resource "kubernetes_job_v1" "migrate" {
           args = [
             <<-CMD
               python /app/scripts/wait_for_tcp.py postgres 5432 120 &&
-              uv run alembic upgrade head
+              alembic upgrade head
             CMD
           ]
           env_from {
@@ -351,7 +351,7 @@ resource "kubernetes_deployment_v1" "worker" {
         container {
           name    = "worker"
           image   = local.api_image
-          command = ["uv", "run", "dramatiq", "app.queue.actors", "--processes", "1", "--threads", "2"]
+          command = ["dramatiq", "app.queue.actors", "--processes", "1", "--threads", "2"]
           env_from {
             config_map_ref {
               name = kubernetes_config_map_v1.app.metadata[0].name

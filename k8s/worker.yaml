@@ -20,8 +20,6 @@ spec:
           imagePullPolicy: IfNotPresent
           command:
             [
-              "uv",
-              "run",
               "dramatiq",
               "app.queue.actors",
               "--processes",

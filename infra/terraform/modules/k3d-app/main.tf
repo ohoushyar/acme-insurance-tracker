@@ -291,8 +291,8 @@ resource "kubernetes_deployment_v1" "stack" {
               python /app/scripts/wait_for_tcp.py 127.0.0.1 5432 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 6379 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 9000 90 &&
-              uv run alembic upgrade head &&
-              uv run uvicorn app.main:app --host 0.0.0.0 --port 8000
+              alembic upgrade head &&
+              uvicorn app.main:app --host 0.0.0.0 --port 8000
             CMD
           ]
           port {
@@ -320,7 +320,7 @@ resource "kubernetes_deployment_v1" "stack" {
               python /app/scripts/wait_for_tcp.py 127.0.0.1 5432 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 6379 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 9000 90 &&
-              uv run dramatiq app.queue.actors --processes 1 --threads 2
+              dramatiq app.queue.actors --processes 1 --threads 2
             CMD
           ]
           env_from {
