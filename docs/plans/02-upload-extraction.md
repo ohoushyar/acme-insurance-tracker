@@ -12,7 +12,7 @@ thin.
 | Topic | Choice | Why |
 |---|---|---|
 | Queue | Dramatiq + existing Redis, **DB 2** (`DRAMATIQ_REDIS_URL=redis://…:6379/2`) | API enqueues; a **separate worker process** (same backend image, different command) runs extraction. No RabbitMQ. Sessions stay on **DB 0**; pytest already uses **DB 1**. A Redis *process* restart still drops both sessions and queued jobs; DB 2 only keeps a session `FLUSHDB` on 0 from wiping the queue. |
-| LLM | LangGraph `StateGraph` + `langchain-openrouter` `ChatOpenRouter` (first-party; not `ChatOpenAI` + `base_url`) | Env: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default `openai/gpt-4o-mini`). |
+| LLM | LangGraph `StateGraph` + `langchain-openrouter` `ChatOpenRouter` (first-party; not `ChatOpenAI` + `base_url`) | Env: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default `openai/gpt-4o-mini`). Local: `OPENROUTER_TLS_SECLEVEL=1` (still verifies; allows weak intercept certs). |
 | Storage (PRD §10) | S3-compatible object store. **MinIO** locally and in k8s; production can point `S3_ENDPOINT` at real S3 with no code change | Object key is always `{user_id}/{document_id}.pdf`. Reads/writes only through the API/worker using that constructed key — never list-bucket, never serve another user’s prefix. |
 | Persistence this step | A `documents` row holding job status + extracted JSON | **No Policy table yet** (step 4 commits after review). |
 | UI this step | Thin authenticated dropzone + status polling + read-only extracted fields on Home | Field editing is step 3. |
@@ -110,9 +110,10 @@ insured`, `premium`, `deductible`, `policy period`, `limit of
 insurance`, and close variants). Pages above a small hit threshold
 (plus immediate neighbors, so a split table is not cut in half) are
 kept. If **no** page scores, fall back to the **first ~8 pages** (decls
-usually sit at the front of a jacket). Only that subset is passed to
-`extract_fields`. OpenRouter never sees the full 35-page ISO boilerplate
-unless the fallback fires on a short doc.
+usually sit at the front of a jacket). If too many pages hit (those
+keywords appear throughout a commercial jacket), keep the **8
+highest-scoring pages** and cap joined text at ~24k characters so
+OpenRouter is not sent the full ISO boilerplate.
 
 This is a cost/quality heuristic from PRD §5 (Harbor Cove: decls are a
 small fraction of pages). It can miss an unusual layout; step 2 accepts
@@ -126,6 +127,12 @@ not call the LLM on empty input.
 Dramatiq: retries with backoff (max 3) for transient OpenRouter/S3
 errors; validation/empty-PDF failures are non-retryable. Actor max_age
 sized for a 35-page extract (order of minutes, not seconds).
+`ChatOpenRouter` is built with a 10s connect / 120s read HTTP timeout.
+Local k8s uses `OPENSSL_CONF` (SECLEVEL=1) instead of a custom
+SSLContext so those timeouts still apply under a TLS interceptor.
+The graph invokes the model in a worker thread under `asyncio.wait_for`.
+Timeouts mark the document failed. Dramatiq's actor time limit is 3
+minutes; `TimeLimitExceeded` is not retried.
 
 Structured logs: `document_id`, `user_id`, `status`, model name —
 **not** PDF text or extracted premium/address payloads.

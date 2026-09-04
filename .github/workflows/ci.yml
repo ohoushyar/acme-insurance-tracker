@@ -92,6 +92,26 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  terraform:
+    name: Terraform fmt and validate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.11.4"
+      - name: Format
+        run: terraform fmt -check -recursive infra/terraform
+      - name: Validate local
+        run: |
+          terraform -chdir=infra/terraform/local init -backend=false -input=false
+          terraform -chdir=infra/terraform/local validate
+      - name: Validate AWS platform
+        run: |
+          terraform -chdir=infra/terraform/aws/platform init -backend=false -input=false
+          terraform -chdir=infra/terraform/aws/platform validate
+
+
   docker:
     name: Docker images
     runs-on: ubuntu-latest

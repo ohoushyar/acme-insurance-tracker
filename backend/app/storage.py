@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Protocol
+from typing import Any, Protocol
+from urllib.parse import urlparse
 from uuid import UUID
 
 import boto3
@@ -51,6 +52,19 @@ class InMemoryDocumentStore:
             raise FileNotFoundError(key) from exc
 
 
+def is_aws_s3_endpoint(endpoint_url: str) -> bool:
+    if not endpoint_url:
+        return False
+    host = (urlparse(endpoint_url).hostname or "").lower()
+    if host == "s3.amazonaws.com":
+        return True
+    return host.endswith(".amazonaws.com") and host.startswith(("s3.", "s3-"))
+
+
+def s3_addressing_style(endpoint_url: str) -> str:
+    return "virtual" if is_aws_s3_endpoint(endpoint_url) else "path"
+
+
 def _is_missing_s3_object(exc: ClientError) -> bool:
     error = exc.response.get("Error") or {}
     code = str(error.get("Code", ""))
@@ -64,25 +78,26 @@ class S3DocumentStore:
         *,
         endpoint_url: str,
         bucket: str,
-        access_key: str,
-        secret_key: str,
+        access_key: str = "",
+        secret_key: str = "",
         region: str = "us-east-1",
         client: BaseClient | None = None,
     ) -> None:
         self._bucket = bucket
-        self._client = client or boto3.client(
-            "s3",
-            endpoint_url=endpoint_url,
-            aws_access_key_id=access_key,
-            aws_secret_access_key=secret_key,
-            region_name=region,
-            config=Config(
+        client_kwargs: dict[str, Any] = {
+            "endpoint_url": endpoint_url,
+            "region_name": region,
+            "config": Config(
                 signature_version="s3v4",
-                s3={"addressing_style": "path"},
+                s3={"addressing_style": s3_addressing_style(endpoint_url)},
                 request_checksum_calculation="when_required",
                 response_checksum_validation="when_required",
             ),
-        )
+        }
+        if access_key and secret_key:
+            client_kwargs["aws_access_key_id"] = access_key
+            client_kwargs["aws_secret_access_key"] = secret_key
+        self._client = client or boto3.client("s3", **client_kwargs)
 
     async def put_pdf(
         self, key: str, body: bytes, content_type: str = "application/pdf"

@@ -275,8 +275,9 @@ effort on the extraction pipeline and data model instead.
   recovery — set up that infrastructure once in item 11, for both
   password reset and emailed reminders.
 - **Document storage** (decided): S3-compatible object store. MinIO
-  locally and in Kubernetes; production can point `S3_ENDPOINT` at
-  real S3 with no code change. Object key is always
+  locally (Compose and local Kubernetes). Staging/production use real S3 for
+  PDFs and a second S3 bucket plus CloudFront for the SPA so the
+  session cookie stays first-party. Object key is always
   `{user_id}/{document_id}.pdf`. Reads and writes go only through the
   API/worker using that constructed key — never list-bucket, never
   serve another user's prefix.   Review (build-order step 3) writes

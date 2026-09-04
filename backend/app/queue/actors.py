@@ -5,9 +5,16 @@ from uuid import UUID
 
 import dramatiq
 import structlog
+from dramatiq.middleware.time_limit import TimeLimitExceeded
 
 from app.config import get_settings
 from app.db import create_engine, create_session_factory, set_tenant
+from app.extraction.llm import (
+    LLM_REQUEST_TIMEOUT_MS,
+    LLM_TIMEOUT_MESSAGE,
+    build_extraction_llm,
+    probe_openrouter,
+)
 from app.queue.broker import broker
 from app.repositories import documents as documents_repo
 from app.storage import StorageKeyError, assert_owned_storage_key, build_document_store
@@ -17,7 +24,7 @@ log = structlog.get_logger("extraction")
 _ = broker
 
 MAX_RETRIES = 3
-EXTRACT_TIME_LIMIT_MS = 10 * 60 * 1000
+EXTRACT_TIME_LIMIT_MS = 3 * 60 * 1000
 
 
 class NonRetryableExtractionError(Exception):
@@ -72,8 +79,6 @@ async def _persist_status(
 
 
 async def _run_extraction_job(document_id: str, user_id: str) -> None:
-    from langchain_openrouter import ChatOpenRouter
-
     from app.extraction.graph import run_extraction
 
     settings = get_settings()
@@ -112,21 +117,35 @@ async def _run_extraction_job(document_id: str, user_id: str) -> None:
         model=settings.openrouter_model,
     )
 
+    log.info(
+        "extraction_pdf_fetch",
+        document_id=document_id,
+        user_id=user_id,
+    )
     try:
         pdf_bytes = await store.get_pdf(storage_key)
     except FileNotFoundError as exc:
         raise NonRetryableExtractionError(
             "The uploaded file could not be found."
         ) from exc
+    log.info(
+        "extraction_pdf_fetched",
+        document_id=document_id,
+        user_id=user_id,
+        byte_size=len(pdf_bytes),
+    )
 
     if not settings.openrouter_api_key:
         raise NonRetryableExtractionError("Extraction is not configured.")
 
-    llm = ChatOpenRouter(
+    probe_openrouter(settings)
+    llm = build_extraction_llm(settings)
+    log.info(
+        "extraction_graph_started",
+        document_id=document_id,
+        user_id=user_id,
         model=settings.openrouter_model,
-        api_key=settings.openrouter_api_key,
-        temperature=0,
-        app_title="Insurance Tracker",
+        timeout_ms=LLM_REQUEST_TIMEOUT_MS,
     )
     outcome = await run_extraction(pdf_bytes=pdf_bytes, llm=llm)
     extracted = (
@@ -195,4 +214,20 @@ async def _extract_document(document_id: str, user_id: str) -> None:
     time_limit=EXTRACT_TIME_LIMIT_MS,
 )
 def extract_document(document_id: str, user_id: str) -> None:
-    asyncio.run(_extract_document(document_id, user_id))
+    try:
+        asyncio.run(_extract_document(document_id, user_id))
+    except TimeLimitExceeded:
+        log.warning(
+            "extraction_time_limit",
+            document_id=document_id,
+            user_id=user_id,
+        )
+        asyncio.run(
+            _persist_status(
+                document_id,
+                user_id,
+                status="failed",
+                error_code="EXTRACTION_FAILED",
+                error_message=LLM_TIMEOUT_MESSAGE,
+            )
+        )

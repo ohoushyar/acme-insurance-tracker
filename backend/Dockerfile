@@ -6,15 +6,21 @@ WORKDIR /app
 
 ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
+    UV_NO_DEV=1 \
     PATH="/app/.venv/bin:$PATH"
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
+# Lock uv out of the network only after the venv is installed.
+ENV UV_OFFLINE=1
+
 COPY alembic.ini ./
 COPY alembic ./alembic
+COPY scripts ./scripts
 COPY app ./app
+COPY openssl-seclevel1.cnf /app/openssl-seclevel1.cnf
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
