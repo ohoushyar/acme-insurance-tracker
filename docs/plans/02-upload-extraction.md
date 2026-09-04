@@ -12,7 +12,7 @@ thin.
 | Topic | Choice | Why |
 |---|---|---|
 | Queue | Dramatiq + existing Redis, **DB 2** (`DRAMATIQ_REDIS_URL=redis://…:6379/2`) | API enqueues; a **separate worker process** (same backend image, different command) runs extraction. No RabbitMQ. Sessions stay on **DB 0**; pytest already uses **DB 1**. A Redis *process* restart still drops both sessions and queued jobs; DB 2 only keeps a session `FLUSHDB` on 0 from wiping the queue. |
-| LLM | LangGraph `StateGraph` + `langchain-openrouter` `ChatOpenRouter` (first-party; not `ChatOpenAI` + `base_url`) | Env: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default `openai/gpt-4o-mini`). |
+| LLM | LangGraph `StateGraph` + `langchain-openrouter` `ChatOpenRouter` (first-party; not `ChatOpenAI` + `base_url`) | Env: `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` (default `openai/gpt-4o-mini`). Local: `OPENROUTER_TLS_SECLEVEL=1` (still verifies; allows weak intercept certs). |
 | Storage (PRD §10) | S3-compatible object store. **MinIO** locally and in k8s; production can point `S3_ENDPOINT` at real S3 with no code change | Object key is always `{user_id}/{document_id}.pdf`. Reads/writes only through the API/worker using that constructed key — never list-bucket, never serve another user’s prefix. |
 | Persistence this step | A `documents` row holding job status + extracted JSON | **No Policy table yet** (step 4 commits after review). |
 | UI this step | Thin authenticated dropzone + status polling + read-only extracted fields on Home | Field editing is step 3. |

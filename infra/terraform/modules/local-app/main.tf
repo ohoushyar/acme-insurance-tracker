@@ -96,17 +96,18 @@ resource "kubernetes_config_map_v1" "app" {
     labels    = local.labels
   }
   data = {
-    SESSION_TTL_SECONDS   = "604800"
-    SESSION_COOKIE_SECURE = "false"
-    LOG_LEVEL             = "info"
-    S3_ENDPOINT           = "http://127.0.0.1:9000"
-    S3_BUCKET             = "insurance-docs"
-    S3_REGION             = "us-east-1"
-    OPENROUTER_MODEL      = var.openrouter_model
-    DATABASE_URL          = local.database_url
-    ADMIN_DATABASE_URL    = local.admin_database_url
-    REDIS_URL             = "redis://127.0.0.1:6379/0"
-    DRAMATIQ_REDIS_URL    = "redis://127.0.0.1:6379/2"
+    SESSION_TTL_SECONDS     = "604800"
+    SESSION_COOKIE_SECURE   = "false"
+    LOG_LEVEL               = "info"
+    S3_ENDPOINT             = "http://127.0.0.1:9000"
+    S3_BUCKET               = "insurance-docs"
+    S3_REGION               = "us-east-1"
+    OPENROUTER_MODEL        = var.openrouter_model
+    OPENROUTER_TLS_SECLEVEL = "1"
+    DATABASE_URL            = local.database_url
+    ADMIN_DATABASE_URL      = local.admin_database_url
+    REDIS_URL               = "redis://127.0.0.1:6379/0"
+    DRAMATIQ_REDIS_URL      = "redis://127.0.0.1:6379/2"
   }
 }
 

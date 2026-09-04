@@ -50,6 +50,7 @@ services:
       S3_REGION: us-east-1
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: openai/gpt-4o-mini
+      OPENROUTER_TLS_SECLEVEL: "1"
     ports:
       - "8000:8000"
     depends_on:
@@ -79,6 +80,7 @@ services:
       S3_REGION: us-east-1
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: openai/gpt-4o-mini
+      OPENROUTER_TLS_SECLEVEL: "1"
     depends_on:
       postgres:
         condition: service_healthy

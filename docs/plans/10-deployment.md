@@ -82,6 +82,11 @@ egress to `openrouter.ai`, or TLS intercept will stall that call until
 the 120s HTTP timeout, then Dramatiq retries. Rebuild and redeploy the
 API image after changing extraction code.
 
+Local k8s and Compose set `OPENROUTER_TLS_SECLEVEL=1` so OpenSSL 3 still
+verifies `openrouter.ai` but accepts TLS-intercept leaf certs with
+1024-bit RSA (`EE certificate key too weak`). AWS leaves the default
+(`2`). Certificate verification stays on; this is not `verify=False`.
+
 ## AWS (staging / production)
 
 `make deploy ENV=staging` (or `production`):

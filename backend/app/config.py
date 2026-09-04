@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -21,6 +22,7 @@ class Settings(BaseSettings):
     s3_region: str = "us-east-1"
     openrouter_api_key: str = ""
     openrouter_model: str = "openai/gpt-4o-mini"
+    openrouter_tls_seclevel: Literal[1, 2] = 2
 
 
 @lru_cache
