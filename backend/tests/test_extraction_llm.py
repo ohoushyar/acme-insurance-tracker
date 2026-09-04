@@ -52,6 +52,12 @@ def test_tls_seclevel_must_be_1_or_2() -> None:
         _settings(openrouter_tls_seclevel=0)
 
 
+def test_tls_seclevel_accepts_configmap_string() -> None:
+    settings = _settings(openrouter_tls_seclevel="1")
+
+    assert settings.openrouter_tls_seclevel == 1
+
+
 def test_build_extraction_llm_wires_seclevel_one_verify(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

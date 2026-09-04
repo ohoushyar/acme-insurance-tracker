@@ -1,7 +1,14 @@
 from functools import lru_cache
-from typing import Literal
+from typing import Annotated, Literal
 
+from pydantic import BeforeValidator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+def parse_int_like(value: object) -> object:
+    if isinstance(value, str):
+        return int(value)
+    return value
 
 
 class Settings(BaseSettings):
@@ -22,7 +29,9 @@ class Settings(BaseSettings):
     s3_region: str = "us-east-1"
     openrouter_api_key: str = ""
     openrouter_model: str = "openai/gpt-4o-mini"
-    openrouter_tls_seclevel: Literal[1, 2] = 2
+    openrouter_tls_seclevel: Annotated[
+        Literal[1, 2], BeforeValidator(parse_int_like)
+    ] = 2
 
 
 @lru_cache
