@@ -129,6 +129,11 @@ export type DocumentList = {
   items: DocumentJob[];
 };
 
+export type LinkSuggestion = {
+  policy_id: string;
+  label: string;
+};
+
 export type Policy = ExtractedPolicy & {
   id: string;
   user_id: string;
@@ -136,6 +141,21 @@ export type Policy = ExtractedPolicy & {
   created_at: string;
   updated_at: string;
   property_ids: string[];
+  series_id?: string | null;
+  previous_premium?: string | null;
+  yoy_change_pct?: number | null;
+  yoy_flagged?: boolean;
+  link_suggestions?: LinkSuggestion[];
+};
+
+export type PolicyHistoryPoint = {
+  year: number;
+  premium: string | null;
+  policy_id: string;
+};
+
+export type PolicyHistory = {
+  items: PolicyHistoryPoint[];
 };
 
 export type PolicyList = {
@@ -186,6 +206,21 @@ export function listPolicies(): Promise<PolicyList> {
 
 export function getPolicy(id: string): Promise<Policy> {
   return request<Policy>(`/api/v1/policies/${id}`);
+}
+
+export function getPolicyHistory(id: string): Promise<PolicyHistory> {
+  return request<PolicyHistory>(`/api/v1/policies/${id}/history`);
+}
+
+export function linkPolicy(id: string, peerPolicyId: string): Promise<Policy> {
+  return request<Policy>(`/api/v1/policies/${id}/link`, {
+    method: "POST",
+    body: JSON.stringify({ peer_policy_id: peerPolicyId }),
+  });
+}
+
+export function unlinkPolicy(id: string): Promise<Policy> {
+  return request<Policy>(`/api/v1/policies/${id}/link`, { method: "DELETE" });
 }
 
 export function updatePolicy(id: string, body: PolicyWrite): Promise<Policy> {

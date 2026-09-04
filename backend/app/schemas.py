@@ -105,6 +105,11 @@ class DocumentList(BaseModel):
     items: list[DocumentOut]
 
 
+class LinkSuggestion(BaseModel):
+    policy_id: uuid.UUID
+    label: str
+
+
 class PolicyOut(ExtractedPolicy):
     model_config = ConfigDict(from_attributes=True)
 
@@ -114,6 +119,25 @@ class PolicyOut(ExtractedPolicy):
     created_at: datetime
     updated_at: datetime
     property_ids: list[uuid.UUID] = Field(default_factory=list)
+    series_id: uuid.UUID | None = None
+    previous_premium: Decimal | None = None
+    yoy_change_pct: float | None = None
+    yoy_flagged: bool = False
+    link_suggestions: list[LinkSuggestion] = Field(default_factory=list)
+
+
+class PolicyLinkRequest(BaseModel):
+    peer_policy_id: uuid.UUID
+
+
+class PolicyHistoryPoint(BaseModel):
+    year: int
+    premium: Decimal | None
+    policy_id: uuid.UUID
+
+
+class PolicyHistory(BaseModel):
+    items: list[PolicyHistoryPoint]
 
 
 class PolicyPatch(ConfirmExtractedPolicy):

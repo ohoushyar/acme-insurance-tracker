@@ -106,10 +106,12 @@ that shape the design:
 
 **Portfolio dashboard**
 - List view of all policies, grouped by renewal urgency (e.g. ≤30
-  days, ≤90 days, on track) and sorted by renewal date within each
-  group.
-- Portfolio summary stats: total annual premium, count renewing soon,
-  count with a significant YoY premium increase.
+  days, ≤90 days, on track; missing renewal date → unknown) and
+  sorted by renewal date within each group.
+- Portfolio summary stats: total annual premium, count renewing
+  within 30 days, count renewing within 90 days (exclusive of ≤30),
+  and count with a significant YoY premium increase (≥10%, once
+  multi-year series exist — build-order step 8).
 - Policy detail view: all extracted fields for one policy.
 
 **Multi-year trend (per property/policy)**
@@ -202,13 +204,16 @@ Policy
                                // (percentage and narrative deductibles,
                                // e.g. "3% (min $50,000)"), not a Decimal
 ├── propertyIds[]              // one policy may cover multiple properties
+├── seriesId                   // optional FK to PolicySeries
 ├── sourceDocument              // reference to the uploaded PDF (stored per-user)
 └── extractionConfidence       // per-field or overall flag for review step
 
-PolicyHistory                  // links policies across years for the same coverage
+PolicySeries                   // links policies across years for the same coverage
+├── id
 ├── userId
-├── propertyId / policyGroup
-└── entries[]  { year, premium, policyId }
+├── label                      // optional
+└── policies[]                 // via Policy.seriesId; history points derived
+                               // from members ordered by effective-date year
 ```
 
 **Note on auth boundary:** every query for properties, policies, or
@@ -252,11 +257,12 @@ effort on the extraction pipeline and data model instead.
   and document formats (scanned/image-based PDFs, non-ISO-standard
   layouts, renewal notices vs. full policy jackets) before trusting
   the extraction pipeline.
-- **Multi-year linking**: how does the system know two uploaded
-  documents (a year apart) represent the "same" policy/coverage for
-  trend purposes? Likely needs a matching heuristic (same property +
-  same coverage type + same or successor carrier) with a manual
-  override, not pure automation.
+- **Multi-year linking** (decided in build-order step 8): suggest
+  candidates that share ≥1 attached property and the same normalized
+  `coverageType`; the user must confirm the link (no silent
+  auto-link). Manual picker + unlink are available on policy detail.
+  Carrier-successor matching and auto-creating properties from
+  extracted locations remain open.
 - **Notification delivery**: not yet decided whether V1 reminders are
   in-app only or also emailed — email requires a verified address at
   minimum, which the registration flow should capture regardless.
@@ -272,8 +278,9 @@ effort on the extraction pipeline and data model instead.
   corrected JSON and `status=reviewed` on the `documents` row. Step 4
   upserts a Policy row from confirm, keyed by the source document.
   Extracted locations are stored on the policy. `propertyIds` are a
-  manual attach in step 5; auto-match from locations stays a step 8
-  risk. PolicyHistory / multi-year matching is also step 8.
+  manual attach in step 5; auto-match from locations remains open.
+  Multi-year series linking is step 8 (`policy_series` +
+  `policies.series_id`).
 
 ## 11. Success criteria for this phase
 
