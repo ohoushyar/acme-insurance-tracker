@@ -1,6 +1,7 @@
+from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -48,3 +49,79 @@ async def insert_if_missing(session: AsyncSession, reminder: Reminder) -> None:
         .on_conflict_do_nothing(constraint="uq_reminders_policy_threshold_renewal")
     )
     await session.execute(stmt)
+
+
+async def list_unsent(session: AsyncSession, user_id: UUID) -> list[Reminder]:
+    result = await session.execute(
+        select(Reminder).where(
+            Reminder.user_id == user_id,
+            Reminder.emailed_at.is_(None),
+            Reminder.email_queued_at.is_(None),
+        )
+    )
+    return list(result.scalars().all())
+
+
+async def claim_unsent(
+    session: AsyncSession, user_id: UUID, queued_at: datetime
+) -> list[Reminder]:
+    stmt = (
+        update(Reminder)
+        .where(
+            Reminder.user_id == user_id,
+            Reminder.emailed_at.is_(None),
+            Reminder.email_queued_at.is_(None),
+        )
+        .values(email_queued_at=queued_at)
+        .returning(Reminder)
+    )
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+async def list_by_ids_for_user(
+    session: AsyncSession, user_id: UUID, reminder_ids: list[UUID]
+) -> list[Reminder]:
+    if not reminder_ids:
+        return []
+    result = await session.execute(
+        select(Reminder).where(
+            Reminder.user_id == user_id, Reminder.id.in_(reminder_ids)
+        )
+    )
+    return list(result.scalars().all())
+
+
+async def mark_emailed(
+    session: AsyncSession,
+    user_id: UUID,
+    reminder_ids: list[UUID],
+    emailed_at: datetime,
+) -> None:
+    if not reminder_ids:
+        return
+    await session.execute(
+        update(Reminder)
+        .where(
+            Reminder.user_id == user_id,
+            Reminder.id.in_(reminder_ids),
+            Reminder.emailed_at.is_(None),
+        )
+        .values(emailed_at=emailed_at)
+    )
+
+
+async def clear_queued(
+    session: AsyncSession, user_id: UUID, reminder_ids: list[UUID]
+) -> None:
+    if not reminder_ids:
+        return
+    await session.execute(
+        update(Reminder)
+        .where(
+            Reminder.user_id == user_id,
+            Reminder.id.in_(reminder_ids),
+            Reminder.emailed_at.is_(None),
+        )
+        .values(email_queued_at=None)
+    )
