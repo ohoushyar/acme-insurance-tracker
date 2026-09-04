@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Policy } from "./api";
-import {
-  daysUntil,
-  groupPolicies,
-  portfolioStats,
-  urgencyOf,
-} from "./urgency";
+import { daysUntil, groupPolicies, portfolioStats, urgencyOf } from "./urgency";
 
 const today = new Date("2026-09-01T12:00:00Z");
 
