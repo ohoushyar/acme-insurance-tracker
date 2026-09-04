@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+import re
+
 from sqlalchemy import text
+from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -7,6 +12,8 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.models import Base
+
+_ROLE_NAME = re.compile(r"^[a-z][a-z0-9_]{0,62}$")
 
 PROPERTIES_RLS_STATEMENTS = [
     "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE users TO app",
@@ -83,6 +90,25 @@ RLS_STATEMENTS = (
     + POLICY_SERIES_RLS_STATEMENTS
     + REMINDERS_RLS_STATEMENTS
 )
+
+
+def ensure_login_role(connection: Connection, role: str, password: str) -> None:
+    """Create a LOGIN role if it is missing so GRANTs in migrations can succeed.
+
+    Role names are restricted to PostgreSQL unquoted identifiers. The password
+    is escaped as a string literal. Callers must use an admin connection.
+    """
+    if not _ROLE_NAME.fullmatch(role):
+        raise ValueError("invalid role name")
+    exists = connection.execute(
+        text("SELECT 1 FROM pg_roles WHERE rolname = :role"),
+        {"role": role},
+    ).scalar()
+    if exists:
+        return
+    escaped_password = password.replace("'", "''")
+    connection.execute(text(f"CREATE ROLE {role} LOGIN PASSWORD '{escaped_password}'"))
+    connection.execute(text(f"GRANT USAGE, CREATE ON SCHEMA public TO {role}"))
 
 
 def create_engine(database_url: str) -> AsyncEngine:

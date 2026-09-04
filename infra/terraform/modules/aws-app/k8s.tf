@@ -57,17 +57,19 @@ resource "kubernetes_config_map_v1" "postgres_init" {
     labels    = local.labels
   }
   data = {
-    "init.sh" = <<-SCRIPT
-      #!/bin/bash
-      set -euo pipefail
-      psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" <<-EOSQL
-        CREATE USER app WITH PASSWORD '${random_password.app_db.result}';
-        GRANT CONNECT ON DATABASE insurance TO app;
-        GRANT USAGE, CREATE ON SCHEMA public TO app;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app;
-      EOSQL
-    SCRIPT
+    "01-app-role.sql" = <<-SQL
+      DO $$$$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app') THEN
+          CREATE ROLE app LOGIN PASSWORD '${random_password.app_db.result}';
+        END IF;
+      END
+      $$$$;
+      GRANT CONNECT ON DATABASE insurance TO app;
+      GRANT USAGE, CREATE ON SCHEMA public TO app;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app;
+    SQL
   }
 }
 
@@ -240,6 +242,7 @@ resource "kubernetes_job_v1" "migrate" {
           args = [
             <<-CMD
               python /app/scripts/wait_for_tcp.py postgres 5432 120 &&
+              python /app/scripts/wait_for_postgres.py 120 &&
               alembic upgrade head
             CMD
           ]

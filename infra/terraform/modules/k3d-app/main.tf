@@ -73,17 +73,19 @@ resource "kubernetes_config_map_v1" "postgres_init" {
     labels    = local.labels
   }
   data = {
-    "init.sh" = <<-SCRIPT
-      #!/bin/bash
-      set -euo pipefail
-      psql -v ON_ERROR_STOP=1 --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" <<-EOSQL
-        CREATE USER app WITH PASSWORD '${var.app_db_password}';
-        GRANT CONNECT ON DATABASE insurance TO app;
-        GRANT USAGE, CREATE ON SCHEMA public TO app;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app;
-      EOSQL
-    SCRIPT
+    "01-app-role.sql" = <<-SQL
+      DO $$$$
+      BEGIN
+        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'app') THEN
+          CREATE ROLE app LOGIN PASSWORD '${var.app_db_password}';
+        END IF;
+      END
+      $$$$;
+      GRANT CONNECT ON DATABASE insurance TO app;
+      GRANT USAGE, CREATE ON SCHEMA public TO app;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO app;
+      ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT USAGE, SELECT ON SEQUENCES TO app;
+    SQL
   }
 }
 
@@ -289,6 +291,7 @@ resource "kubernetes_deployment_v1" "stack" {
           args = [
             <<-CMD
               python /app/scripts/wait_for_tcp.py 127.0.0.1 5432 90 &&
+              python /app/scripts/wait_for_postgres.py 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 6379 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 9000 90 &&
               alembic upgrade head &&
@@ -318,6 +321,7 @@ resource "kubernetes_deployment_v1" "stack" {
           args = [
             <<-CMD
               python /app/scripts/wait_for_tcp.py 127.0.0.1 5432 90 &&
+              python /app/scripts/wait_for_postgres.py 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 6379 90 &&
               python /app/scripts/wait_for_tcp.py 127.0.0.1 9000 90 &&
               dramatiq app.queue.actors --processes 1 --threads 2
