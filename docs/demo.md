@@ -39,6 +39,8 @@ Wait until Vite prints the local URL.
 
 Open **http://localhost:5173**. You should see the sign-in page.
 
+![Login](screenshots/login_page.png)
+
 Optional checks if something looks stuck:
 
 | What | Where |
@@ -90,6 +92,8 @@ Point at the summary strip, then the grouped list:
   terms (kept so YoY has history without flooding Urgent) plus
   Westbrook (current policy, date unknown).
 
+![Casey Dashboard](screenshots/casey_home.png)
+
 Call out:
 
 - Coverage type on each card (Property, GL, Flood, Umbrella, Inland
@@ -101,6 +105,8 @@ Call out:
 
 Open **Harbor Cove Condominium Association, Inc** (the current term,
 ~10 days to renewal).
+
+![Casey Harbor Condo.](screenshots/casey_harbor_yoy_increase.png)
 
 ### Policy detail — Harbor Cove
 
@@ -127,6 +133,8 @@ The first visit creates 10 / 30 / 60-day items from renewal dates.
 Mark one read so the badge drops. Say that verified users also get
 email; Mailpit is the local inbox (seed users are already verified).
 
+![Casey Reminder](screenshots/casey_reminder.png)
+
 ### Properties
 
 Open **Properties**.
@@ -143,6 +151,8 @@ Open **Uploads**.
 - `harbor-cove-icat-draft.pdf` — **completed**, ready to review
   (extraction without confirming yet).
 - `unreadable-scan.pdf` — **failed**, with a plain-language error.
+
+![Casey Uploads](screenshots/casey_uploads.png)
 
 Click **Review extracted fields** on the completed job:
 
@@ -177,6 +187,8 @@ Only if `.env` has `OPENROUTER_API_KEY` set **and** you restarted
 On **Uploads**, drop a policy PDF. Status moves pending → processing →
 completed or failed (worker + LLM). Then use the same Review screen as
 the seed draft.
+
+An example PDF file is provided for the testing purposese. @[**docs/example_pdf**]
 
 Without a key, skip this; the seed already shows the review path.
 
