@@ -1,5 +1,6 @@
 import { type ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useReminders } from "../reminder-count";
 
 export function Shell({
   children,
@@ -9,6 +10,10 @@ export function Shell({
   onLogout?: () => void;
 }) {
   const location = useLocation();
+  const { unreadCount } = useReminders();
+  const remindersLabel =
+    unreadCount > 0 ? `Reminders, ${unreadCount} unread` : "Reminders";
+
   return (
     <div className="app-shell">
       <aside className="app-nav">
@@ -33,6 +38,22 @@ export function Shell({
                 }
               >
                 Properties
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/reminders"
+                aria-current={
+                  location.pathname.startsWith("/reminders")
+                    ? "page"
+                    : undefined
+                }
+                aria-label={remindersLabel}
+              >
+                Reminders
+                {unreadCount > 0 ? (
+                  <span className="nav-count">{unreadCount}</span>
+                ) : null}
               </Link>
             </li>
           </ul>

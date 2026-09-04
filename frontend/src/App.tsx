@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth";
 import { Home } from "./pages/Home";
@@ -7,6 +8,15 @@ import { PolicyEdit } from "./pages/PolicyEdit";
 import { Properties } from "./pages/Properties";
 import { Register } from "./pages/Register";
 import { Review } from "./pages/Review";
+import { RemindersProvider } from "./reminder-count";
+
+export function AppProviders({ children }: { children: ReactNode }) {
+  return (
+    <AuthProvider>
+      <RemindersProvider>{children}</RemindersProvider>
+    </AuthProvider>
+  );
+}
 
 export function AppRoutes() {
   return (
@@ -25,9 +35,9 @@ export function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
+      <AppProviders>
         <AppRoutes />
-      </AuthProvider>
+      </AppProviders>
     </BrowserRouter>
   );
 }
