@@ -366,5 +366,5 @@ resource "kubernetes_service_v1" "frontend" {
 }
 
 output "url" {
-  value = "http://localhost:8080"
+  value = "kubectl port-forward svc/insurance-tracker 8080:80  # then http://localhost:8080"
 }

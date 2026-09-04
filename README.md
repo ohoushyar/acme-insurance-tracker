@@ -12,8 +12,9 @@ build-order writeups. Cluster deploy is documented in
 - An [OpenRouter](https://openrouter.ai/) API key for live extraction (not
   required for tests; CI uses a fake LLM)
 
-For **cluster** deploy (optional): [k3d](https://k3d.io),
-[Terraform](https://www.terraform.io/) 1.5+, and the AWS CLI (production).
+For **cluster** deploy (optional): a local Kubernetes (Rancher Desktop
+is enough), `kubectl`, [Terraform](https://www.terraform.io/) 1.5+, and
+the AWS CLI (production).
 
 ## Local development
 
@@ -116,18 +117,25 @@ The frontend image is nginx + a Vite production build. It proxies `/api` to the
 Compose also runs MinIO (S3-compatible PDF store) and a Dramatiq worker on
 Redis DB 2. Set `OPENROUTER_API_KEY` in the environment for live extraction.
 
-## Local Kubernetes (k3d)
+## Local Kubernetes
 
-One pod runs API, Dramatiq, Postgres, Redis, MinIO, and nginx:
+One pod runs API, Dramatiq, Postgres, Redis, MinIO, and nginx on whatever
+cluster `kubectl` currently points at (Rancher Desktop, Docker Desktop,
+or k3d). **Rancher Desktop already is Kubernetes** — you do not need k3d.
 
 ```bash
+# Kubernetes enabled in Rancher Desktop, then:
+kubectl cluster-info
 make deploy-local
+kubectl port-forward svc/insurance-tracker 8080:80
 # http://localhost:8080
 make destroy-local
 ```
 
-Requires k3d, Terraform, and Docker. `destroy-local` deletes the k3d cluster
-and Terraform state; it does not remove Docker images or Compose volumes.
+`destroy-local` removes the workload only; it does not quit Rancher
+Desktop. Requires `kubectl`, Terraform, and Docker (or the Rancher
+Desktop docker/nerdctl CLI). If the cluster uses containerd, `nerdctl`
+must be on `PATH` (Rancher Desktop: `~/.rd/bin/nerdctl`).
 
 ## AWS (staging / production)
 

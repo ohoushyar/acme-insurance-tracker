@@ -8,9 +8,15 @@ terraform {
   }
 }
 
+variable "kube_context" {
+  type        = string
+  default     = ""
+  description = "Kubeconfig context (Rancher Desktop, Docker Desktop, k3d, ...). Empty uses current-context."
+}
+
 provider "kubernetes" {
   config_path    = pathexpand("~/.kube/config")
-  config_context = "k3d-insurance-tracker"
+  config_context = var.kube_context == "" ? null : var.kube_context
 }
 
 variable "openrouter_api_key" {
