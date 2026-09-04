@@ -178,6 +178,7 @@ User
 ├── id
 ├── email
 ├── passwordHash               // or auth-provider reference if using SSO
+├── emailVerifiedAt            // null until verify-email or password reset
 ├── createdAt
 └── properties[]               // owned via Property.userId, not embedded
 
@@ -217,6 +218,17 @@ PolicySeries                   // links policies across years for the same cover
 ├── label                      // optional
 └── policies[]                 // via Policy.seriesId; history points derived
                                // from members ordered by effective-date year
+
+Reminder                       // in-app + email; unique per policy/threshold/term
+├── id
+├── userId
+├── policyId
+├── thresholdDays              // 60, 30, or 10
+├── renewalDate                // snapshot of Policy.renewalDate at insert
+├── readAt
+├── emailQueuedAt              // claimed when a send job is enqueued
+├── emailedAt                  // set after the worker mailer succeeds
+└── createdAt
 ```
 
 **Note on auth boundary:** every query for properties, policies, or
@@ -267,13 +279,15 @@ effort on the extraction pipeline and data model instead.
   auto-link). Manual picker + unlink are available on policy detail.
   Carrier-successor matching and auto-creating properties from
   extracted locations remain open.
-- **Notification delivery** (decided in build-order step 9): V1
-  reminders are in-app persisted notifications at 60/30/10 days,
-  with mark as read / unread. Email is build-order item 11 and still
-  wants a verified address.
-- **Password reset delivery**: still needs email sending for account
-  recovery — set up that infrastructure once in item 11, for both
-  password reset and emailed reminders.
+- **Notification delivery** (decided in build-order steps 9 and 11):
+  in-app persisted notifications at 60/30/10 days, with mark as read /
+  unread. Email uses the same reminder rows after `emailVerifiedAt` is
+  set. Local send is Mailpit SMTP; staging/production use SES via IRSA.
+  The Dramatiq worker sends; a self-delayed `scan_reminder_emails` actor
+  runs hourly. `GET /reminders` stays in-app only.
+- **Password reset delivery** (decided in build-order step 11): Redis
+  single-use tokens and the same mailer as verification and renewal
+  mail. Completing reset also sets `emailVerifiedAt`.
 - **Document storage** (decided): S3-compatible object store. MinIO
   locally (Compose and local Kubernetes). Staging/production use real S3 for
   PDFs and a second S3 bucket plus CloudFront for the SPA so the
