@@ -2,7 +2,6 @@
 # Load locally built images into the cluster runtime.
 # Rancher Desktop / k3s uses containerd (nerdctl -n k8s.io).
 # Docker Desktop and Rancher Desktop+dockerd share the docker image store.
-# k3d needs `k3d image import`.
 set -euo pipefail
 
 if [[ $# -lt 1 ]]; then
@@ -24,14 +23,6 @@ done
 
 load_one() {
   local image="$1"
-  if [[ "$KUBE_CONTEXT" == k3d-* ]]; then
-    command -v k3d >/dev/null || {
-      echo "k3d is required to import images into context ${KUBE_CONTEXT}" >&2
-      exit 1
-    }
-    k3d image import "$image" -c "${KUBE_CONTEXT#k3d-}"
-    return
-  fi
   if [[ "$runtime" == containerd://* ]]; then
     if [[ -z "$nerdctl_bin" ]]; then
       echo "Cluster runtime is containerd (${KUBE_CONTEXT}) but nerdctl was not found." >&2

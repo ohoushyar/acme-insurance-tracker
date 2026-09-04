@@ -1,4 +1,4 @@
-# Deployment: local k3d + AWS EKS
+# Deployment: local Kubernetes + AWS EKS
 
 This plan covers **cluster deploy and teardown** for the insurance
 tracker. Product features are unchanged. Compose (`make serve`) stays
@@ -8,8 +8,8 @@ the inner-loop path.
 
 | Topic | Choice | Why |
 |---|---|---|
-| Orchestration | Terraform | Requested. Makefile only bootstraps k3d/images/AWS auth and runs apply/destroy. |
-| Local cluster | Current kubecontext (Rancher Desktop, Docker Desktop, or k3d) | One multi-container pod on whatever cluster `kubectl` already talks to. Do not create a nested k3d cluster when Rancher Desktop is already running. |
+| Orchestration | Terraform | Requested. Makefile bootstraps images/AWS auth and runs apply/destroy. |
+| Local cluster | Current kubecontext (Rancher Desktop) | One multi-container pod on the cluster `kubectl` already talks to. |
 | AWS compute | One EKS cluster, namespaces `staging` and `production` | Cheaper than two clusters; isolation is namespace + buckets. |
 | AWS app HA | API `replicas=2`, worker `replicas=2` | Availability for stateless app pods. |
 | AWS data plane | In-cluster Postgres + Redis, 1 replica each | Confirmed; no RDS/ElastiCache in this step. |
@@ -22,7 +22,7 @@ the inner-loop path.
 
 The SPA calls relative `/api/v1/...` with `credentials: "include"`.
 CloudFront is the HTTPS host: `/` → frontend bucket, `/api/*` → ALB →
-API pods. Local is HTTP on `http://localhost:8080`
+API pods. Local is HTTP via `kubectl port-forward`
 (`SESSION_COOKIE_SECURE=false`).
 
 ```
@@ -37,10 +37,10 @@ API/worker → Postgres, Redis, S3 docs bucket
 ```
 infra/terraform/
   modules/
-    k3d-app/          # local all-in-one Deployment + Service
+    local-app/        # local all-in-one Deployment + ClusterIP Service
     aws-platform/     # VPC, EKS, ECR, IRSA for ALB/EBS, ALB controller
     aws-app/          # per-env S3 x2, CloudFront, namespace, workloads
-  local/              # current kubecontext (Rancher Desktop / Docker Desktop / k3d)
+  local/              # current kubecontext (Rancher Desktop)
   aws/
     platform/         # shared cluster state
     app/              # workspaces staging|production
@@ -56,26 +56,24 @@ resources.
 
 ## Local Kubernetes
 
-`make deploy-local` uses the **current kubectl context**. That is
-Rancher Desktop (`rancher-desktop`), Docker Desktop, or k3d — not a
-new cluster. k3d is only needed if you do not already have a local
-cluster; Rancher Desktop already runs k3s, so installing k3d on top of
-it is the wrong tool.
+`make deploy-local` uses the **current kubectl context** (Rancher
+Desktop: `rancher-desktop`). It does not create a cluster.
 
 1. Confirm `kubectl cluster-info` works (start Rancher Desktop first).
 2. Build API image; frontend image with `API_UPSTREAM=127.0.0.1:8000`.
 3. Load images into the cluster runtime (docker image store, or
    `nerdctl -n k8s.io` for containerd / Rancher Desktop).
 4. `terraform apply` in `infra/terraform/local`.
+5. `kubectl port-forward svc/insurance-tracker 8080:80`.
 
 Containers share localhost (Postgres 5432, Redis 6379, MinIO 9000,
-API 8000, nginx 80). The API command waits for TCP then runs
-`alembic upgrade head` and uvicorn. Secrets default to Compose-like
-values; `OPENROUTER_API_KEY` comes from `.env`.
+API 8000, nginx 80). The API waits for a SQL connection, ensures the
+`app` role, then runs `alembic upgrade head` and uvicorn. Secrets
+default to Compose-like values; `OPENROUTER_API_KEY` comes from `.env`.
 
 `make destroy-local`: terraform destroy of the workload only. It does
-**not** shut down Rancher Desktop or delete the cluster. Idempotent if
-already gone. Does not touch Compose volumes.
+**not** shut down Rancher Desktop. Idempotent if already gone. Does
+not touch Compose volumes.
 
 ## AWS (staging / production)
 

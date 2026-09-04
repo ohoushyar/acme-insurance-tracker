@@ -119,9 +119,8 @@ Redis DB 2. Set `OPENROUTER_API_KEY` in the environment for live extraction.
 
 ## Local Kubernetes
 
-One pod runs API, Dramatiq, Postgres, Redis, MinIO, and nginx on whatever
-cluster `kubectl` currently points at (Rancher Desktop, Docker Desktop,
-or k3d). **Rancher Desktop already is Kubernetes** — you do not need k3d.
+One pod runs API, Dramatiq, Postgres, Redis, MinIO, and nginx on the
+cluster `kubectl` currently points at (Rancher Desktop).
 
 ```bash
 # Kubernetes enabled in Rancher Desktop, then:

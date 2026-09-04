@@ -11,7 +11,7 @@ terraform {
 variable "kube_context" {
   type        = string
   default     = ""
-  description = "Kubeconfig context (Rancher Desktop, Docker Desktop, k3d, ...). Empty uses current-context."
+  description = "Kubeconfig context (Rancher Desktop, Docker Desktop, ...). Empty uses current-context."
 }
 
 provider "kubernetes" {
@@ -26,7 +26,7 @@ variable "openrouter_api_key" {
 }
 
 module "app" {
-  source             = "../modules/k3d-app"
+  source             = "../modules/local-app"
   openrouter_api_key = var.openrouter_api_key
 }
 
