@@ -141,7 +141,8 @@ describe("saved policies", () => {
     expect(section).toHaveTextContent("HCL-2024-4412");
     expect(section).toHaveTextContent("Property");
     expect(section).toHaveTextContent("2025-01-01");
-    expect(section).toHaveTextContent("186500.00");
+    expect(section).toHaveTextContent("$186,500");
+    expect(section).not.toHaveTextContent("186500.00");
     expect(section).toHaveTextContent("Building 1");
     expect(section).toHaveTextContent("Building 3");
     expect(

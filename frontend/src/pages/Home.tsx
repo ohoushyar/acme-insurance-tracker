@@ -11,6 +11,7 @@ import {
 import { useAuth } from "../auth";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { Shell } from "../components/Shell";
+import { formatMoneyField } from "../money";
 import {
   URGENCY_LABELS,
   URGENCY_ORDER,
@@ -81,7 +82,9 @@ function PolicyCard({
         {(policy.policy_number || policy.renewal_date) && policy.total_premium
           ? " · "
           : null}
-        {policy.total_premium ? <span>{policy.total_premium}</span> : null}
+        {policy.total_premium ? (
+          <span>{formatMoneyField(policy.total_premium)}</span>
+        ) : null}
       </p>
       {days !== null ? (
         <p className="muted">

@@ -138,10 +138,4 @@ export function groupPolicies(
   return groups;
 }
 
-export function formatMoney(amount: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+export { formatMoney } from "./money";

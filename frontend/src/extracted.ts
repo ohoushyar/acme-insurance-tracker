@@ -4,6 +4,7 @@ import type {
   FieldConfidence,
   Location,
 } from "./api";
+import { canonicalMoneyString } from "./money";
 
 const ZERO_CONFIDENCE: FieldConfidence = {
   policy_number: 0,
@@ -32,6 +33,17 @@ function textOrNull(value: unknown): string | null {
     return null;
   }
   return value.trim() === "" ? null : value;
+}
+
+function moneyOrNull(value: unknown): string | null {
+  const text = textOrNull(value);
+  if (text === null) {
+    return null;
+  }
+  if (!/[eE]/.test(text)) {
+    return text;
+  }
+  return canonicalMoneyString(text);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -83,10 +95,10 @@ export function normalizeExtracted(raw: unknown): ExtractedPolicy {
     broker: textOrNull(src.broker),
     effective_date: textOrNull(src.effective_date),
     renewal_date: textOrNull(src.renewal_date),
-    term_premium: textOrNull(src.term_premium),
-    policy_fee: textOrNull(src.policy_fee),
-    total_premium: textOrNull(src.total_premium),
-    limit_of_insurance: textOrNull(src.limit_of_insurance),
+    term_premium: moneyOrNull(src.term_premium),
+    policy_fee: moneyOrNull(src.policy_fee),
+    total_premium: moneyOrNull(src.total_premium),
+    limit_of_insurance: moneyOrNull(src.limit_of_insurance),
     coverage_type: textOrNull(src.coverage_type),
     carriers: Array.isArray(src.carriers)
       ? src.carriers.filter((item): item is string => typeof item === "string")

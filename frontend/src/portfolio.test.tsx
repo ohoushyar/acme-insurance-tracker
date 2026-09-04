@@ -515,6 +515,34 @@ describe("portfolio management", () => {
     expect(screen.queryByText(/no properties yet/i)).not.toBeInTheDocument();
   });
 
+  it("shows limit of insurance as currency instead of scientific notation", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/policies/pol-1")) {
+        return jsonResponse(
+          200,
+          savedPolicy({ limit_of_insurance: "4.80E+6" }),
+        );
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/policies/pol-1/edit");
+    expect(await screen.findByLabelText(/limit of insurance/i)).toHaveValue(
+      "$4,800,000",
+    );
+    expect(screen.queryByDisplayValue("4.80E+6")).not.toBeInTheDocument();
+  });
+
   it("does not claim an unattached property is linked to 0 policies", async () => {
     vi.mocked(fetch).mockImplementation(async (input) => {
       const url = String(input);

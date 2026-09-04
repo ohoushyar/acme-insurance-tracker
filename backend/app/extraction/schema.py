@@ -3,10 +3,14 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Annotated, Self
 
-from pydantic import BaseModel, BeforeValidator, Field, model_validator
+from pydantic import BaseModel, BeforeValidator, Field, PlainSerializer, model_validator
 
 _MONEY = re.compile(
     r"^(?:(?:US\$|USD|\$)\s*)?([\d,]+(?:\.\d+)?)$",
+    re.IGNORECASE,
+)
+_SCIENTIFIC_MONEY = re.compile(
+    r"[+-]?(?:\d+\.?\d*|\.\d+)e[+-]?\d+",
     re.IGNORECASE,
 )
 
@@ -32,6 +36,16 @@ def parse_deductible_amount(value: object) -> str | None:
     raise ValueError("must be a deductible amount")
 
 
+def _decimal_money(text: str) -> Decimal:
+    try:
+        amount = Decimal(text)
+    except InvalidOperation as exc:
+        raise ValueError("must be a money amount") from exc
+    if not amount.is_finite():
+        raise ValueError("must be a money amount")
+    return amount
+
+
 def parse_strict_money_amount(value: object) -> Decimal | None:
     if value is None:
         return None
@@ -49,12 +63,19 @@ def parse_strict_money_amount(value: object) -> Decimal | None:
     if not text:
         return None
     match = _MONEY.fullmatch(text)
-    if match is None:
+    if match is not None:
+        return _decimal_money(match.group(1).replace(",", ""))
+    stripped = re.sub(r"^(?:US\$|USD|\$)\s*", "", text, flags=re.IGNORECASE)
+    stripped = stripped.replace(",", "")
+    if _SCIENTIFIC_MONEY.fullmatch(stripped) is None:
         raise ValueError("must be a money amount")
-    try:
-        return Decimal(match.group(1).replace(",", ""))
-    except InvalidOperation as exc:
-        raise ValueError("must be a money amount") from exc
+    return _decimal_money(stripped)
+
+
+def serialize_money(value: Decimal | None) -> str | None:
+    if value is None:
+        return None
+    return format(value, "f")
 
 
 def parse_money_amount(value: object) -> Decimal | None:
@@ -68,9 +89,15 @@ def parse_money_amount(value: object) -> Decimal | None:
         raise
 
 
-MoneyAmount = Annotated[Decimal | None, BeforeValidator(parse_money_amount)]
+MoneyAmount = Annotated[
+    Decimal | None,
+    BeforeValidator(parse_money_amount),
+    PlainSerializer(serialize_money, return_type=str | None, when_used="json"),
+]
 StrictMoneyAmount = Annotated[
-    Decimal | None, BeforeValidator(parse_strict_money_amount)
+    Decimal | None,
+    BeforeValidator(parse_strict_money_amount),
+    PlainSerializer(serialize_money, return_type=str | None, when_used="json"),
 ]
 OptionalStr = Annotated[str | None, BeforeValidator(blank_to_none)]
 DeductibleAmount = Annotated[str | None, BeforeValidator(parse_deductible_amount)]

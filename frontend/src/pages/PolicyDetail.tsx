@@ -26,6 +26,7 @@ import {
 import { useAuth } from "../auth";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { Shell } from "../components/Shell";
+import { displayMoney } from "../money";
 
 function display(value: string | null | undefined): string {
   return value && value.trim() !== "" ? value : "—";
@@ -268,22 +269,22 @@ export function PolicyDetail() {
         />
         <DetailLine
           label="Term premium"
-          value={display(policy.term_premium)}
+          value={displayMoney(policy.term_premium)}
           confidence={confidencePct(confidence, "term_premium")}
         />
         <DetailLine
           label="Policy fee"
-          value={display(policy.policy_fee)}
+          value={displayMoney(policy.policy_fee)}
           confidence={confidencePct(confidence, "policy_fee")}
         />
         <DetailLine
           label="Total premium"
-          value={display(policy.total_premium)}
+          value={displayMoney(policy.total_premium)}
           confidence={confidencePct(confidence, "total_premium")}
         />
         <DetailLine
           label="Last year's premium"
-          value={display(policy.previous_premium)}
+          value={displayMoney(policy.previous_premium)}
         />
         <DetailLine
           label="Year-over-year change"
@@ -296,7 +297,7 @@ export function PolicyDetail() {
         />
         <DetailLine
           label="Limit of insurance"
-          value={display(policy.limit_of_insurance)}
+          value={displayMoney(policy.limit_of_insurance)}
           confidence={confidencePct(confidence, "limit_of_insurance")}
         />
         <DetailLine

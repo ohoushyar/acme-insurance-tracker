@@ -148,6 +148,9 @@ describe("dashboard urgency groups", () => {
     expect(
       screen.getByRole("heading", { name: /on track/i }),
     ).toBeInTheDocument();
+    expect(screen.getByText("$10,000")).toBeInTheDocument();
+    expect(screen.getByText("$20,000")).toBeInTheDocument();
+    expect(screen.getByText("$30,000")).toBeInTheDocument();
     expect(
       screen.queryByLabelText(/drop pdfs here or choose files/i),
     ).not.toBeInTheDocument();

@@ -129,6 +129,9 @@ describe("review confirm screen", () => {
       "HCL-2024-4412",
     );
     expect(screen.getByLabelText(/named insured/i)).toHaveValue("");
+    expect(screen.getByLabelText(/limit of insurance/i)).toHaveValue(
+      "$25,000,000",
+    );
     expect(screen.getByText("92%")).not.toHaveClass("confidence-low");
     expect(screen.getByText("40%")).toHaveClass("confidence-low");
     expect(screen.getByText(/missing or low confidence/i)).toBeInTheDocument();

@@ -4,6 +4,8 @@ import type {
   FieldConfidence,
   Location,
 } from "../api";
+import { isMoneyScalarKey } from "../money";
+import { MoneyInput } from "./MoneyInput";
 
 const SCALAR_FIELDS = [
   { key: "policy_number", label: "Policy number", type: "text" },
@@ -86,17 +88,28 @@ export function PolicyFormFields({
       {SCALAR_FIELDS.map((field) => (
         <div className="review-field" key={field.key}>
           <label htmlFor={field.key}>{field.label}</label>
-          <input
-            id={field.key}
-            name={field.key}
-            type={field.type}
-            value={draft[field.key] ?? ""}
-            onChange={(event) =>
-              onChange((current) =>
-                setScalar(current, field.key, event.target.value),
-              )
-            }
-          />
+          {isMoneyScalarKey(field.key) ? (
+            <MoneyInput
+              id={field.key}
+              name={field.key}
+              value={draft[field.key] ?? ""}
+              onChange={(value) =>
+                onChange((current) => setScalar(current, field.key, value))
+              }
+            />
+          ) : (
+            <input
+              id={field.key}
+              name={field.key}
+              type={field.type}
+              value={draft[field.key] ?? ""}
+              onChange={(event) =>
+                onChange((current) =>
+                  setScalar(current, field.key, event.target.value),
+                )
+              }
+            />
+          )}
         </div>
       ))}
 

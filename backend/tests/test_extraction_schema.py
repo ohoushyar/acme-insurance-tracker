@@ -161,3 +161,16 @@ def test_empty_string_scalars_become_null() -> None:
     assert result.confidence.policy_number == 0
     assert result.broker == "Northshore Risk Partners"
     assert result.confidence.broker == 0.7
+
+
+def test_scientific_notation_money_is_parsed_and_serialized_as_fixed_point() -> None:
+    from app.extraction.schema import ConfirmExtractedPolicy, ExtractedPolicy
+
+    result = ExtractedPolicy.model_validate({"limit_of_insurance": "4.80E+6"})
+    assert result.limit_of_insurance == Decimal(4800000)
+    dumped = result.model_dump(mode="json")
+    assert "E" not in str(dumped["limit_of_insurance"]).upper()
+    assert Decimal(dumped["limit_of_insurance"]) == Decimal(4800000)
+
+    confirmed = ConfirmExtractedPolicy.model_validate({"limit_of_insurance": "4.80E+6"})
+    assert confirmed.limit_of_insurance == Decimal(4800000)

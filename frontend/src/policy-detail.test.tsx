@@ -152,7 +152,45 @@ describe("policy detail", () => {
     expect(
       screen.getByRole("link", { name: /source document/i }),
     ).toHaveAttribute("href", "/documents/doc-1/review");
+    expect(
+      screen.getByText(/limit of insurance/i).closest(".detail-line"),
+    ).toHaveTextContent("$25,000,000");
     expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  });
+
+  it("shows a scientific-notation limit as currency", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/policies/pol-1/history")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/policies/pol-1")) {
+        return jsonResponse(
+          200,
+          savedPolicy({ limit_of_insurance: "4.80E+6" }),
+        );
+      }
+      if (url.endsWith("/api/v1/policies")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/policies/pol-1");
+    expect(await screen.findByText(/limit of insurance/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/limit of insurance/i).closest(".detail-line"),
+    ).toHaveTextContent("$4,800,000");
+    expect(screen.queryByText("4.80E+6")).not.toBeInTheDocument();
   });
 
   it("shows a plain-language error when the policy is missing", async () => {

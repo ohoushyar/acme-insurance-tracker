@@ -11,8 +11,10 @@ import {
   type Location,
 } from "../api";
 import { useAuth } from "../auth";
+import { MoneyInput } from "../components/MoneyInput";
 import { Shell } from "../components/Shell";
 import { normalizeExtracted } from "../extracted";
+import { isMoneyScalarKey } from "../money";
 
 const LOW_CONFIDENCE = 0.7;
 
@@ -234,17 +236,28 @@ export function Review() {
               {field.label}
               <ConfidenceBadge value={draft.confidence[field.key]} />
             </label>
-            <input
-              id={field.key}
-              name={field.key}
-              type={field.type}
-              value={draft[field.key] ?? ""}
-              onChange={(event) =>
-                updateDraft((current) =>
-                  setScalar(current, field.key, event.target.value),
-                )
-              }
-            />
+            {isMoneyScalarKey(field.key) ? (
+              <MoneyInput
+                id={field.key}
+                name={field.key}
+                value={draft[field.key] ?? ""}
+                onChange={(value) =>
+                  updateDraft((current) => setScalar(current, field.key, value))
+                }
+              />
+            ) : (
+              <input
+                id={field.key}
+                name={field.key}
+                type={field.type}
+                value={draft[field.key] ?? ""}
+                onChange={(event) =>
+                  updateDraft((current) =>
+                    setScalar(current, field.key, event.target.value),
+                  )
+                }
+              />
+            )}
           </div>
         ))}
 
