@@ -134,7 +134,11 @@ make destroy-local
 `destroy-local` removes the workload only; it does not quit Rancher
 Desktop. Requires `kubectl`, Terraform, and Docker (or the Rancher
 Desktop docker/nerdctl CLI). If the cluster uses containerd, `nerdctl`
-must be on `PATH` (Rancher Desktop: `~/.rd/bin/nerdctl`).
+must be on `PATH` (Rancher Desktop: `~/.rd/bin/nerdctl`). If ConfigMaps
+or Secrets were left in the cluster from a previous apply (Terraform
+state missing), `make deploy-local` imports them instead of failing
+with "already exists". `make destroy-local` also deletes leftover
+objects labeled `app=insurance-tracker`.
 
 ## AWS (staging / production)
 

@@ -24,4 +24,14 @@ if [[ -f "${TF_LOCAL}/terraform.tfstate" ]]; then
   terraform -chdir="$TF_LOCAL" destroy -auto-approve "${tf_vars[@]}" || true
 fi
 
+# Objects left in the cluster after lost/empty Terraform state are not
+# destroyed above. Delete by label so the next deploy-local can create them.
+if command -v kubectl >/dev/null && [[ -n "${KUBE_CONTEXT}" ]]; then
+  NAMESPACE="${NAMESPACE:-default}"
+  kubectl --context "$KUBE_CONTEXT" -n "$NAMESPACE" delete \
+    configmap,secret,deployment,service \
+    -l app=insurance-tracker \
+    --ignore-not-found
+fi
+
 echo "Removed the insurance-tracker workload. The local Kubernetes cluster was left running."

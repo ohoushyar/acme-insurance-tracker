@@ -63,7 +63,9 @@ Desktop: `rancher-desktop`). It does not create a cluster.
 2. Build API image; frontend image with `API_UPSTREAM=127.0.0.1:8000`.
 3. Load images into the cluster runtime (docker image store, or
    `nerdctl -n k8s.io` for containerd / Rancher Desktop).
-4. `terraform apply` in `infra/terraform/local`.
+4. Import any leftover ConfigMaps/Secrets/Deployment/Service already in
+   the cluster (lost local Terraform state), then `terraform apply` in
+   `infra/terraform/local`.
 5. `kubectl port-forward svc/insurance-tracker 8080:80`.
 
 Containers share localhost (Postgres 5432, Redis 6379, MinIO 9000,
@@ -71,9 +73,10 @@ API 8000, nginx 80). The API waits for a SQL connection, ensures the
 `app` role, then runs `alembic upgrade head` and uvicorn. Secrets
 default to Compose-like values; `OPENROUTER_API_KEY` comes from `.env`.
 
-`make destroy-local`: terraform destroy of the workload only. It does
-**not** shut down Rancher Desktop. Idempotent if already gone. Does
-not touch Compose volumes.
+`make destroy-local`: terraform destroy of the workload only, then
+`kubectl delete -l app=insurance-tracker` for objects that were not in
+state. It does **not** shut down Rancher Desktop. Idempotent if already
+gone. Does not touch Compose volumes.
 
 If the worker log stops at `extraction_started`, it is waiting on MinIO
 (`extraction_pdf_fetch`) or the graph/LLM (`extraction_graph_started`).
