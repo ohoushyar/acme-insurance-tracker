@@ -147,6 +147,23 @@ resource "kubernetes_deployment_v1" "stack" {
       spec {
         restart_policy = "Always"
 
+        # Rancher Desktop adds search "lan" with ndots:5. openrouter.ai
+        # has one dot, so it is queried as openrouter.ai.lan and many
+        # home routers answer 192.168.1.1. ndots:1 makes any dotted
+        # name an FQDN lookup first; searches omit lan so it cannot
+        # hijack short names either.
+        dns_config {
+          searches = [
+            "default.svc.cluster.local",
+            "svc.cluster.local",
+            "cluster.local",
+          ]
+          option {
+            name  = "ndots"
+            value = "1"
+          }
+        }
+
         volume {
           name = "postgres-data"
           empty_dir {}

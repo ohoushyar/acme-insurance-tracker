@@ -25,3 +25,14 @@ def test_destroy_local_deletes_labeled_cluster_leftovers() -> None:
     script = DESTROY_LOCAL.read_text()
     assert "app=insurance-tracker" in script
     assert "kubectl" in script
+
+
+def test_local_pod_sets_ndots_one_so_external_names_skip_search() -> None:
+    module = LOCAL_MODULE.read_text()
+
+    assert re.search(
+        r'dns_config\s*\{[^}]*option\s*\{[^}]*name\s*=\s*"ndots"[^}]*value\s*=\s*"1"',
+        module,
+        flags=re.DOTALL,
+    ), "local pod must set ndots:1 so openrouter.ai is not resolved via search lan"
+    assert "lan" not in re.findall(r'searches\s*=\s*\[(.*?)\]', module, flags=re.DOTALL)[0]
