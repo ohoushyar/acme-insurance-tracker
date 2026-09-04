@@ -350,6 +350,10 @@ resource "kubernetes_deployment_v1" "stack" {
       }
     }
   }
+  timeouts {
+    create = "10m"
+    update = "10m"
+  }
 }
 
 resource "kubernetes_service_v1" "frontend" {
@@ -359,7 +363,7 @@ resource "kubernetes_service_v1" "frontend" {
     labels    = local.labels
   }
   spec {
-    type     = "LoadBalancer"
+    type     = "ClusterIP"
     selector = local.labels
     port {
       name        = "http"
@@ -367,6 +371,7 @@ resource "kubernetes_service_v1" "frontend" {
       target_port = 80
     }
   }
+  wait_for_load_balancer = false
 }
 
 output "url" {

@@ -41,5 +41,4 @@ echo
 echo "Local cluster app (context ${KUBE_CONTEXT}):"
 echo "  kubectl --context ${KUBE_CONTEXT} port-forward svc/insurance-tracker 8080:80"
 echo "  then open http://localhost:8080"
-echo "If the Service got a LoadBalancer IP/hostname:"
-kubectl --context "$KUBE_CONTEXT" get svc insurance-tracker
+kubectl --context "$KUBE_CONTEXT" get pod,svc -l app=insurance-tracker
