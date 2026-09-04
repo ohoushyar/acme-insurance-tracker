@@ -9,6 +9,7 @@ import {
 import { useAuth } from "../auth";
 import { ConfirmDelete } from "../components/ConfirmDelete";
 import { Shell } from "../components/Shell";
+import { formatMoneyField } from "../money";
 
 function unlinkCopy(count: number): string {
   if (count <= 0) {
@@ -114,7 +115,7 @@ export function Properties() {
               <p className="job-summary">{property.address}</p>
             ) : null}
             {property.stated_value ? (
-              <p className="muted">{property.stated_value}</p>
+              <p className="muted">{formatMoneyField(property.stated_value)}</p>
             ) : null}
             {pendingDeleteId === property.id ? (
               <ConfirmDelete

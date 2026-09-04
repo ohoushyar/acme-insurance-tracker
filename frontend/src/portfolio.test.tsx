@@ -122,7 +122,7 @@ describe("portfolio management", () => {
         };
         expect(body.label).toBe("Cove Plaza");
         expect(body.address).toBe("100 Harbor Cove Drive");
-        expect(body.stated_value).toBe("25000000.00");
+        expect(body.stated_value).toBe("25000000");
         properties = [created];
         return jsonResponse(201, created);
       }
@@ -166,8 +166,70 @@ describe("portfolio management", () => {
     const list = screen.getByRole("region", { name: /properties/i });
     expect(list).toHaveTextContent("Cove Plaza");
     expect(list).toHaveTextContent("100 Harbor Cove Drive");
-    expect(list).toHaveTextContent("25000000.00");
+    expect(list).toHaveTextContent("$25,000,000");
+    expect(list).not.toHaveTextContent("25000000.00");
     expect(screen.queryByLabelText(/^label$/i)).not.toBeInTheDocument();
+  });
+
+  it("shows stated value as currency instead of scientific notation", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, {
+          items: [
+            covePlaza({
+              label: "214 Harbor Ave — Retail Strip",
+              address: "214 Harbor Ave, Harbor City, CA 90710",
+              stated_value: "4.20E+6",
+            }),
+          ],
+        });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/properties");
+    expect(
+      await screen.findByText("214 Harbor Ave — Retail Strip"),
+    ).toBeInTheDocument();
+    const list = screen.getByRole("region", { name: /properties/i });
+    expect(list).toHaveTextContent("$4,200,000");
+    expect(list).not.toHaveTextContent("4.20E+6");
+  });
+
+  it("shows stated value as currency on the property edit form", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/properties/prop-1")) {
+        return jsonResponse(
+          200,
+          covePlaza({
+            label: "88 Fenmore Industrial Park",
+            address: "88 Fenmore Rd, Compton, CA 90220",
+            stated_value: "1.150E+7",
+          }),
+        );
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/properties/prop-1/edit");
+    expect(await screen.findByLabelText(/stated value/i)).toHaveValue(
+      "$11,500,000",
+    );
+    expect(screen.queryByDisplayValue("1.150E+7")).not.toBeInTheDocument();
   });
 
   it("edits a property and returns to the list", async () => {

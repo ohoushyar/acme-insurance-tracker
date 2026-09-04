@@ -1,3 +1,5 @@
+import { MoneyInput } from "./MoneyInput";
+
 export function PropertyFormFields({
   label,
   address,
@@ -38,12 +40,11 @@ export function PropertyFormFields({
       </div>
       <div className="review-field">
         <label htmlFor="property-stated-value">Stated value</label>
-        <input
+        <MoneyInput
           id="property-stated-value"
           name="stated_value"
-          type="text"
           value={statedValue}
-          onChange={(event) => onStatedValueChange(event.target.value)}
+          onChange={onStatedValueChange}
         />
       </div>
     </>

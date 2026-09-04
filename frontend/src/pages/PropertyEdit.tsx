@@ -4,6 +4,7 @@ import { ApiError, getProperty, updateProperty } from "../api";
 import { useAuth } from "../auth";
 import { PropertyFormFields } from "../components/PropertyFormFields";
 import { Shell } from "../components/Shell";
+import { canonicalMoneyString } from "../money";
 import { propertyWriteBody } from "../property-write";
 
 export function PropertyEdit() {
@@ -30,7 +31,7 @@ export function PropertyEdit() {
         }
         setLabel(property.label);
         setAddress(property.address ?? "");
-        setStatedValue(property.stated_value ?? "");
+        setStatedValue(canonicalMoneyString(property.stated_value) ?? "");
         setLoaded(true);
       })
       .catch((err: unknown) => {

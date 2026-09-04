@@ -1,3 +1,5 @@
+import { canonicalMoneyString } from "./money";
+
 function emptyToNull(value: string): string | null {
   const trimmed = value.trim();
   return trimmed === "" ? null : trimmed;
@@ -16,9 +18,11 @@ export function propertyWriteBody(
   if (!trimmedLabel) {
     return null;
   }
+  const stated = emptyToNull(statedValue);
   return {
     label: trimmedLabel,
     address: emptyToNull(address),
-    stated_value: emptyToNull(statedValue),
+    stated_value:
+      stated === null ? null : (canonicalMoneyString(stated) ?? stated),
   };
 }
