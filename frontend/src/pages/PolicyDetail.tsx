@@ -106,13 +106,23 @@ export function PolicyDetail() {
       return;
     }
     let cancelled = false;
-    void refresh(id).catch((err: unknown) => {
-      if (!cancelled) {
-        setLoadError(
-          err instanceof ApiError ? err.message : "Unable to load policy.",
-        );
-      }
-    });
+    void Promise.all([getPolicy(id), getPolicyHistory(id), listPolicies()])
+      .then(([loaded, hist, listed]) => {
+        if (cancelled) {
+          return;
+        }
+        setPolicy(loaded);
+        setHistory(hist.items);
+        setPeers(listed.items.filter((item) => item.id !== id));
+        setPeerId(loaded.link_suggestions?.[0]?.policy_id ?? "");
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setLoadError(
+            err instanceof ApiError ? err.message : "Unable to load policy.",
+          );
+        }
+      });
     void listProperties()
       .then((listed) => {
         if (!cancelled) {
