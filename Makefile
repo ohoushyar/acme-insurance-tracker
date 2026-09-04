@@ -5,6 +5,7 @@ SHELL := /bin/bash
 COMPOSE := docker compose
 TEST_DEPS := postgres redis
 SERVE_DEPS := postgres redis minio
+NPM_INSTALL := npm install --no-audit --no-fund
 
 # Copy env defaults once so alembic/uvicorn can load local settings.
 .env:
@@ -14,8 +15,12 @@ backend-test:
 	$(COMPOSE) up -d --wait $(TEST_DEPS)
 	cd backend && uv sync && uv run pytest
 
-frontend-test:
-	cd frontend && npm install && npm test
+frontend/node_modules: frontend/package.json frontend/package-lock.json
+	cd frontend && $(NPM_INSTALL)
+	touch frontend/node_modules
+
+frontend-test: frontend/node_modules
+	cd frontend && npm test
 
 test: backend-test frontend-test
 
@@ -30,5 +35,5 @@ serve: .env
 		uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000; \
 	}
 
-frontend:
-	cd frontend && npm install && npm run dev
+frontend: frontend/node_modules
+	cd frontend && npm run dev
