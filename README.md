@@ -64,6 +64,9 @@ the sandbox is not automated).
 
 ## Demo accounts (local only)
 
+Presenter script (start servers, seed, logins, stop):
+[docs/demo.md](docs/demo.md).
+
 Load five synthetic portfolios (properties, policies, YoY series, upload jobs):
 
 ```bash
