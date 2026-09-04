@@ -1,6 +1,6 @@
 import re
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
 
@@ -155,3 +155,20 @@ class PolicyPatch(ConfirmExtractedPolicy):
 
 class PolicyList(BaseModel):
     items: list[PolicyOut]
+
+
+class ReminderOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    policy_id: uuid.UUID
+    threshold_days: int
+    renewal_date: date
+    read_at: datetime | None = None
+    named_insured: str | None = None
+    coverage_type: str | None = None
+
+
+class ReminderList(BaseModel):
+    items: list[ReminderOut]
+    unread_count: int

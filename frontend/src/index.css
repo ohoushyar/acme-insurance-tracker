@@ -176,6 +176,13 @@ input {
   font-weight: 600;
 }
 
+.nav-count {
+  font-family: var(--font-serif);
+  font-weight: 600;
+  margin-left: 6px;
+  color: var(--urgent);
+}
+
 .app-nav .btn-quiet {
   margin-top: auto;
   padding: 0;

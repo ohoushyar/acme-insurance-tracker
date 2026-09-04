@@ -2,15 +2,14 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthProvider } from "./auth";
-import { AppRoutes } from "./App";
+import { AppProviders, AppRoutes } from "./App";
 
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <AuthProvider>
+      <AppProviders>
         <AppRoutes />
-      </AuthProvider>
+      </AppProviders>
     </MemoryRouter>,
   );
 }
@@ -75,6 +74,9 @@ describe("auth screens", () => {
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -110,6 +112,9 @@ describe("auth screens", () => {
       }
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
@@ -154,6 +159,9 @@ describe("auth screens", () => {
       }
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
@@ -200,6 +208,9 @@ describe("auth screens", () => {
       }
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });

@@ -9,7 +9,7 @@ from app.config import Settings, get_settings
 from app.db import create_engine, create_session_factory
 from app.errors import register_exception_handlers
 from app.logging import configure_logging
-from app.routers import auth, documents, policies, properties
+from app.routers import auth, documents, policies, properties, reminders
 from app.storage import build_document_store
 
 
@@ -50,6 +50,7 @@ def create_app() -> FastAPI:
     app.include_router(properties.router)
     app.include_router(documents.router)
     app.include_router(policies.router)
+    app.include_router(reminders.router)
     return app
 
 

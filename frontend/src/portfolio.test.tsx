@@ -2,16 +2,15 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { AuthProvider } from "./auth";
-import { AppRoutes } from "./App";
+import { AppProviders, AppRoutes } from "./App";
 import type { ExtractedPolicy, Policy } from "./api";
 
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
-      <AuthProvider>
+      <AppProviders>
         <AppRoutes />
-      </AuthProvider>
+      </AppProviders>
     </MemoryRouter>,
   );
 }
@@ -130,6 +129,9 @@ describe("portfolio management", () => {
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: properties });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -188,6 +190,9 @@ describe("portfolio management", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: policies });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -232,6 +237,9 @@ describe("portfolio management", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: [savedPolicy()] });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -268,6 +276,9 @@ describe("portfolio management", () => {
       }
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: properties });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
@@ -322,6 +333,9 @@ describe("portfolio management", () => {
       if (url.endsWith("/api/v1/policies")) {
         return jsonResponse(200, { items: policies });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -375,6 +389,9 @@ describe("portfolio management", () => {
           error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
         });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url}`);
     });
 
@@ -400,6 +417,9 @@ describe("portfolio management", () => {
       }
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [covePlaza()] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url}`);
     });
@@ -437,6 +457,9 @@ describe("portfolio management", () => {
       if (url.endsWith("/api/v1/properties")) {
         return jsonResponse(200, { items: [] });
       }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
       throw new Error(`unexpected fetch ${url} ${init?.method}`);
     });
 
@@ -472,6 +495,9 @@ describe("portfolio management", () => {
         return jsonResponse(200, {
           items: [covePlaza({ label: "Mine Plaza" })],
         });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
       }
       throw new Error(`unexpected fetch ${url}`);
     });

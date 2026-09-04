@@ -64,12 +64,24 @@ POLICY_SERIES_RLS_STATEMENTS = [
     """,
 ]
 
+REMINDERS_RLS_STATEMENTS = [
+    "GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE reminders TO app",
+    "ALTER TABLE reminders ENABLE ROW LEVEL SECURITY",
+    "DROP POLICY IF EXISTS reminders_isolation ON reminders",
+    """
+    CREATE POLICY reminders_isolation ON reminders
+        USING (user_id = current_setting('app.user_id')::uuid)
+        WITH CHECK (user_id = current_setting('app.user_id')::uuid)
+    """,
+]
+
 RLS_STATEMENTS = (
     PROPERTIES_RLS_STATEMENTS
     + DOCUMENTS_RLS_STATEMENTS
     + POLICIES_RLS_STATEMENTS
     + POLICY_PROPERTIES_RLS_STATEMENTS
     + POLICY_SERIES_RLS_STATEMENTS
+    + REMINDERS_RLS_STATEMENTS
 )
 
 
