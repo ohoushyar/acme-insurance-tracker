@@ -10,7 +10,7 @@ async def list_for_user(session: AsyncSession, user_id: UUID) -> list[Policy]:
     result = await session.execute(
         select(Policy)
         .where(Policy.user_id == user_id)
-        .order_by(Policy.created_at.desc())
+        .order_by(Policy.renewal_date.asc().nulls_last(), Policy.created_at.desc())
     )
     return list(result.scalars().all())
 

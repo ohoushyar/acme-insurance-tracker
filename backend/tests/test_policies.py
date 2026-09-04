@@ -1,4 +1,5 @@
 import json
+from datetime import date
 from decimal import Decimal
 from typing import Any
 from uuid import UUID, uuid4
@@ -62,6 +63,7 @@ async def _insert_policy(
     user_id: UUID,
     source_document_id: UUID,
     named_insured: str = "Harbor Cove LLC",
+    renewal_date: str | None = None,
 ) -> UUID:
     settings = get_settings()
     engine = create_async_engine(settings.admin_database_url)
@@ -71,10 +73,12 @@ async def _insert_policy(
             text("""
                 INSERT INTO policies (
                     id, user_id, source_document_id, named_insured,
+                    renewal_date,
                     carriers, deductibles, locations, extraction_confidence
                 )
                 VALUES (
                     :id, :uid, :doc_id, :named_insured,
+                    :renewal_date,
                     '[]'::jsonb, '[]'::jsonb, '[]'::jsonb, '{}'::jsonb
                 )
                 """),
@@ -83,10 +87,36 @@ async def _insert_policy(
                 "uid": user_id,
                 "doc_id": source_document_id,
                 "named_insured": named_insured,
+                "renewal_date": (
+                    None if renewal_date is None else date.fromisoformat(renewal_date)
+                ),
             },
         )
     await engine.dispose()
     return policy_id
+
+
+async def test_list_policies_orders_by_renewal_date_nulls_last(
+    client: AsyncClient,
+) -> None:
+    user_id = await _owner_id(client)
+    doc_later = await _insert_document(user_id, "reviewed")
+    doc_earlier = await _insert_document(user_id, "reviewed")
+    doc_null = await _insert_document(user_id, "reviewed")
+    later_id = await _insert_policy(
+        user_id, doc_later, named_insured="Later", renewal_date="2027-06-01"
+    )
+    earlier_id = await _insert_policy(
+        user_id, doc_earlier, named_insured="Earlier", renewal_date="2026-10-01"
+    )
+    null_id = await _insert_policy(
+        user_id, doc_null, named_insured="NoDate", renewal_date=None
+    )
+
+    listed = await client.get("/api/v1/policies")
+    assert listed.status_code == 200
+    ids = [item["id"] for item in listed.json()["items"]]
+    assert ids == [str(earlier_id), str(later_id), str(null_id)]
 
 
 def _edited_extraction() -> dict[str, Any]:
