@@ -1,6 +1,7 @@
 import { type ReactNode } from "react";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "./auth";
+import { ForgotPassword } from "./pages/ForgotPassword";
 import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { PolicyDetail } from "./pages/PolicyDetail";
@@ -11,8 +12,10 @@ import { PropertyEdit } from "./pages/PropertyEdit";
 import { PropertyNew } from "./pages/PropertyNew";
 import { Register } from "./pages/Register";
 import { Reminders } from "./pages/Reminders";
+import { ResetPassword } from "./pages/ResetPassword";
 import { Review } from "./pages/Review";
 import { Uploads } from "./pages/Uploads";
+import { VerifyEmail } from "./pages/VerifyEmail";
 import { RemindersProvider } from "./reminder-count";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -38,6 +41,9 @@ export function AppRoutes() {
       <Route path="/documents/:id/review" element={<Review />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
     </Routes>
   );
 }

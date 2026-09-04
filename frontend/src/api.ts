@@ -2,6 +2,7 @@ export type User = {
   id: string;
   email: string;
   created_at: string;
+  email_verified_at?: string | null;
 };
 
 type ErrorBody = {
@@ -65,6 +66,31 @@ export function register(email: string, password: string): Promise<User> {
 
 export function logout(): Promise<void> {
   return request<void>("/api/v1/auth/logout", { method: "POST" });
+}
+
+export function resendVerification(): Promise<void> {
+  return request<void>("/api/v1/auth/resend-verification", { method: "POST" });
+}
+
+export function verifyEmail(token: string): Promise<User> {
+  return request<User>("/api/v1/auth/verify-email", {
+    method: "POST",
+    body: JSON.stringify({ token }),
+  });
+}
+
+export function forgotPassword(email: string): Promise<void> {
+  return request<void>("/api/v1/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  });
+}
+
+export function resetPassword(token: string, password: string): Promise<void> {
+  return request<void>("/api/v1/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, password }),
+  });
 }
 
 export function changePassword(
