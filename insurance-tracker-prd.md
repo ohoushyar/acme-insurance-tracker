@@ -123,9 +123,9 @@ that shape the design:
   individual-policy level.
 
 **Reminders**
-- Flag/notify at 60/30/10 days before a renewal date. (Notification
-  delivery mechanism — email vs. in-app — is an implementation
-  decision, not fixed by this PRD.)
+- Flag/notify at 60/30/10 days before a renewal date. V1 is in-app
+  (build-order step 9); email is step 11. Users can mark a reminder
+  read or unread.
 
 **Portfolio management**
 - User can add/remove properties from their portfolio independent of
@@ -237,8 +237,9 @@ not a display preference.
 6. Dashboard list view + summary stats.
 7. Policy detail view.
 8. Multi-year trend chart + YoY change flagging.
-9. Renewal reminders.
+9. Renewal reminders (in-app).
 10. Manual policy create (no PDF).
+11. Email renewal reminders.
 
 ## 9. Design reference
 
@@ -263,12 +264,13 @@ effort on the extraction pipeline and data model instead.
   auto-link). Manual picker + unlink are available on policy detail.
   Carrier-successor matching and auto-creating properties from
   extracted locations remain open.
-- **Notification delivery**: not yet decided whether V1 reminders are
-  in-app only or also emailed — email requires a verified address at
-  minimum, which the registration flow should capture regardless.
-- **Password reset delivery**: implies email sending is needed for
-  account recovery even if renewal reminders end up in-app-only —
-  worth setting up email infrastructure once, for both uses.
+- **Notification delivery** (decided in build-order step 9): V1
+  reminders are in-app persisted notifications at 60/30/10 days,
+  with mark as read / unread. Email is build-order item 11 and still
+  wants a verified address.
+- **Password reset delivery**: still needs email sending for account
+  recovery — set up that infrastructure once in item 11, for both
+  password reset and emailed reminders.
 - **Document storage** (decided): S3-compatible object store. MinIO
   locally and in Kubernetes; production can point `S3_ENDPOINT` at
   real S3 with no code change. Object key is always
