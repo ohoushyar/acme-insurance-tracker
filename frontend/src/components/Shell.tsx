@@ -66,6 +66,16 @@ export function Shell({
                 ) : null}
               </Link>
             </li>
+            <li>
+              <Link
+                to="/profile"
+                aria-current={
+                  location.pathname.startsWith("/profile") ? "page" : undefined
+                }
+              >
+                Profile
+              </Link>
+            </li>
           </ul>
         </nav>
         {onLogout ? (
