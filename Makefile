@@ -4,7 +4,7 @@ SHELL := /bin/bash
 
 COMPOSE := docker compose
 TEST_DEPS := postgres redis
-SERVE_DEPS := postgres redis minio minio-init
+SERVE_DEPS := postgres redis minio
 
 # Copy env defaults once so alembic/uvicorn can load local settings.
 .env:
@@ -22,11 +22,13 @@ test: backend-test frontend-test
 # Infra + migrations + worker, then the API in the foreground.
 serve: .env
 	$(COMPOSE) up -d --wait $(SERVE_DEPS)
+	$(COMPOSE) run --rm --no-deps minio-init
 	cd backend && uv sync && uv run alembic upgrade head
-	cd backend && \
+	cd backend && { \
 		uv run dramatiq app.queue.actors --processes 1 --threads 2 & \
 		trap 'kill $$(jobs -p) 2>/dev/null' EXIT INT TERM; \
-		uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+		uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000; \
+	}
 
 frontend:
 	cd frontend && npm install && npm run dev
