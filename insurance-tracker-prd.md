@@ -80,7 +80,9 @@ that shape the design:
 **Accounts & authentication**
 - User registration (email + password at minimum; social/SSO login is
   a nice-to-have, not required for V1).
-- Login/logout, password reset flow.
+- Login/logout, in-session password change on the Profile page.
+  Email password reset is still deferred until email sending exists
+  (build-order item 11).
 - Each user has exactly one portfolio in V1 (see Non-Goals re:
   multi-user/team accounts on one portfolio).
 - Session handling (standard token/session-based auth — specific
@@ -91,7 +93,7 @@ that shape the design:
 
 **Upload & extraction**
 - Manual upload of one or more policy PDFs (drag-and-drop or file
-  picker).
+  picker) on the **Uploads** page, not the portfolio list.
 - LLM-based extraction into a fixed schema (see Section 6).
 - Extraction returns `null`/"not found" for missing fields rather than
   guessing.
@@ -130,7 +132,8 @@ that shape the design:
 **Portfolio management**
 - User can add/remove properties from their portfolio independent of
   uploading a policy (e.g. add a property first, attach policies to
-  it later).
+  it later). Create and edit use dedicated pages (`/properties/new`,
+  `/properties/:id/edit`); the list is list-only.
 - User can edit property-level details (name/label, address) after
   creation.
 - User can delete a policy or a property (with confirmation).
