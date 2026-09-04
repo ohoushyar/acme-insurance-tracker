@@ -75,6 +75,13 @@ default to Compose-like values; `OPENROUTER_API_KEY` comes from `.env`.
 **not** shut down Rancher Desktop. Idempotent if already gone. Does
 not touch Compose volumes.
 
+If the worker log stops at `extraction_started`, it is waiting on MinIO
+(`extraction_pdf_fetch`) or the graph/LLM (`extraction_graph_started`).
+A missing `OPENROUTER_API_KEY` at `make deploy-local` time, cluster
+egress to `openrouter.ai`, or TLS intercept will stall that call until
+the 120s HTTP timeout, then Dramatiq retries. Rebuild and redeploy the
+API image after changing extraction code.
+
 ## AWS (staging / production)
 
 `make deploy ENV=staging` (or `production`):

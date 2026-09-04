@@ -126,6 +126,10 @@ not call the LLM on empty input.
 Dramatiq: retries with backoff (max 3) for transient OpenRouter/S3
 errors; validation/empty-PDF failures are non-retryable. Actor max_age
 sized for a 35-page extract (order of minutes, not seconds).
+`ChatOpenRouter` is built with a 120s HTTP timeout and SDK retries
+disabled so a blocked OpenRouter call fails in the worker logs instead
+of sitting on `extraction_started` until Dramatiq's 10-minute
+`time_limit`. Dramatiq still retries the job.
 
 Structured logs: `document_id`, `user_id`, `status`, model name —
 **not** PDF text or extracted premium/address payloads.

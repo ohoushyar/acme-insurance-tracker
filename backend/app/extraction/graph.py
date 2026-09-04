@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from io import BytesIO
 from typing import Any, TypedDict
 
+import structlog
 from langchain_core.exceptions import OutputParserException
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.runnables import RunnableConfig
@@ -17,6 +18,7 @@ from app.extraction.schema import ExtractedPolicy
 MIN_TEXT_CHARS = 40
 FALLBACK_PAGE_COUNT = 8
 PAGE_HIT_THRESHOLD = 1
+log = structlog.get_logger("extraction")
 PAGE_KEYWORDS = (
     "declarations",
     "named insured",
@@ -143,6 +145,7 @@ async def extract_fields_node(
     llm = config["configurable"]["llm"]
     structured = llm.with_structured_output(ExtractedPolicy)
     try:
+        log.info("extraction_llm_invoke")
         extracted = await structured.ainvoke(
             [
                 SystemMessage(content=EXTRACTION_SYSTEM_PROMPT),
