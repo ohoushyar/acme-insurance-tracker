@@ -78,15 +78,26 @@ default to Compose-like values; `OPENROUTER_API_KEY` comes from `.env`.
 state. It does **not** shut down Rancher Desktop. Idempotent if already
 gone. Does not touch Compose volumes.
 
-If the worker log stops at `extraction_llm_invoke`, OpenRouter never
-got the HTTPS request. The usual local cause is CoreDNS `ndots:5` plus
-Rancher Desktop's search domain `lan`: `openrouter.ai` is looked up as
-`openrouter.ai.lan` and the LAN gateway answers `192.168.1.1`. The
-local pod sets `dnsConfig.options ndots:1` and omits the `lan` search
-domain so dotted names such as `openrouter.ai` are queried as FQDNs.
-After redeploy the job fails within 120s (`extraction_llm_timeout`)
-if egress is still blocked. Dramatiq's actor time limit is 3 minutes
-and `TimeLimitExceeded` marks the document failed without retrying.
+If the worker log stops at `extraction_llm_invoke` and OpenRouter's
+dashboard shows no request, the pod never completed HTTPS to
+`openrouter.ai`. Two local causes:
+
+1. CoreDNS `ndots:5` plus Rancher Desktop's search domain `lan`:
+   `openrouter.ai` is looked up as `openrouter.ai.lan` and the LAN
+   gateway answers `192.168.1.1`. The local pod sets
+   `dnsConfig.options ndots:1` and omits the `lan` search domain.
+2. TLS intercept / missing proxy. Local deploy uses `hostNetwork`,
+   sets `OPENSSL_CONF` (TLS 1.2, security level 1) so httpx timeouts
+   still fire, and forwards `HTTPS_PROXY` / `HTTP_PROXY` from the
+   host. A probe logs `openrouter_probe_ok` or
+   `openrouter_probe_failed` with the exception type before the LLM
+   call.
+
+`NO_PROXY` defaults to `127.0.0.1,localhost,::1` so MinIO is not sent
+through a corporate proxy. After `make deploy-local`, look for the
+probe line before `extraction_llm_invoke`. Dramatiq's actor time
+limit is 3 minutes and `TimeLimitExceeded` marks the document failed
+without retrying.
 
 Local k8s and Compose set `OPENROUTER_TLS_SECLEVEL=1` so OpenSSL 3 still
 verifies `openrouter.ai` but accepts TLS-intercept leaf certs with

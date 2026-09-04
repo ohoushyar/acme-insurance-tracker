@@ -35,4 +35,21 @@ def test_local_pod_sets_ndots_one_so_external_names_skip_search() -> None:
         module,
         flags=re.DOTALL,
     ), "local pod must set ndots:1 so openrouter.ai is not resolved via search lan"
-    assert "lan" not in re.findall(r'searches\s*=\s*\[(.*?)\]', module, flags=re.DOTALL)[0]
+    assert "lan" not in re.findall(r"searches\s*=\s*\[(.*?)\]", module, flags=re.DOTALL)[
+        0
+    ]
+
+
+def test_deploy_local_forwards_https_proxy() -> None:
+    script = DEPLOY_LOCAL.read_text()
+    assert "https_proxy" in script
+    module = LOCAL_MODULE.read_text()
+    assert "OPENSSL_CONF" in module
+    assert "host_network" in module
+
+
+def test_api_image_includes_openssl_seclevel_config() -> None:
+    dockerfile = ROOT / "backend/Dockerfile"
+    conf = ROOT / "backend/openssl-seclevel1.cnf"
+    assert conf.is_file()
+    assert "openssl-seclevel1.cnf" in dockerfile.read_text()

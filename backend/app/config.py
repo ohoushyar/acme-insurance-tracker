@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     openrouter_tls_seclevel: Annotated[
         Literal[1, 2], BeforeValidator(parse_int_like)
     ] = 2
+    https_proxy: str = ""
+    http_proxy: str = ""
+    ssl_cert_file: str = ""
 
 
 @lru_cache

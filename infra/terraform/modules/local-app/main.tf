@@ -58,12 +58,47 @@ variable "openrouter_model" {
   default = "openai/gpt-4o-mini"
 }
 
+variable "https_proxy" {
+  type    = string
+  default = ""
+}
+
+variable "http_proxy" {
+  type    = string
+  default = ""
+}
+
+variable "no_proxy" {
+  type    = string
+  default = "127.0.0.1,localhost,::1"
+}
+
 locals {
   labels = {
     app = "insurance-tracker"
   }
   database_url       = "postgresql+asyncpg://app:${var.app_db_password}@127.0.0.1:5432/insurance"
   admin_database_url = "postgresql+asyncpg://postgres:${var.postgres_password}@127.0.0.1:5432/insurance"
+  app_config = merge(
+    {
+      SESSION_TTL_SECONDS     = "604800"
+      SESSION_COOKIE_SECURE   = "false"
+      LOG_LEVEL               = "info"
+      S3_ENDPOINT             = "http://127.0.0.1:9000"
+      S3_BUCKET               = "insurance-docs"
+      S3_REGION               = "us-east-1"
+      OPENROUTER_MODEL        = var.openrouter_model
+      OPENROUTER_TLS_SECLEVEL = "1"
+      OPENSSL_CONF            = "/app/openssl-seclevel1.cnf"
+      NO_PROXY                = var.no_proxy
+      DATABASE_URL            = local.database_url
+      ADMIN_DATABASE_URL      = local.admin_database_url
+      REDIS_URL               = "redis://127.0.0.1:6379/0"
+      DRAMATIQ_REDIS_URL      = "redis://127.0.0.1:6379/2"
+    },
+    var.https_proxy != "" ? { HTTPS_PROXY = var.https_proxy } : {},
+    var.http_proxy != "" ? { HTTP_PROXY = var.http_proxy } : {},
+  )
 }
 
 resource "kubernetes_config_map_v1" "postgres_init" {
@@ -95,20 +130,7 @@ resource "kubernetes_config_map_v1" "app" {
     namespace = var.namespace
     labels    = local.labels
   }
-  data = {
-    SESSION_TTL_SECONDS     = "604800"
-    SESSION_COOKIE_SECURE   = "false"
-    LOG_LEVEL               = "info"
-    S3_ENDPOINT             = "http://127.0.0.1:9000"
-    S3_BUCKET               = "insurance-docs"
-    S3_REGION               = "us-east-1"
-    OPENROUTER_MODEL        = var.openrouter_model
-    OPENROUTER_TLS_SECLEVEL = "1"
-    DATABASE_URL            = local.database_url
-    ADMIN_DATABASE_URL      = local.admin_database_url
-    REDIS_URL               = "redis://127.0.0.1:6379/0"
-    DRAMATIQ_REDIS_URL      = "redis://127.0.0.1:6379/2"
-  }
+  data = local.app_config
 }
 
 resource "kubernetes_secret_v1" "app" {
@@ -146,6 +168,8 @@ resource "kubernetes_deployment_v1" "stack" {
       }
       spec {
         restart_policy = "Always"
+        host_network   = true
+        dns_policy     = "ClusterFirstWithHostNet"
 
         # Rancher Desktop adds search "lan" with ndots:5. openrouter.ai
         # has one dot, so it is queried as openrouter.ai.lan and many

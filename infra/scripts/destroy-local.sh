@@ -6,6 +6,9 @@ cd "$ROOT"
 
 TF_LOCAL="infra/terraform/local"
 OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+HTTPS_PROXY="${HTTPS_PROXY:-}"
+HTTP_PROXY="${HTTP_PROXY:-}"
+NO_PROXY="${NO_PROXY:-127.0.0.1,localhost,::1}"
 
 command -v terraform >/dev/null || { echo "terraform is required" >&2; exit 1; }
 
@@ -14,7 +17,12 @@ if [[ -z "$KUBE_CONTEXT" ]] && command -v kubectl >/dev/null; then
   KUBE_CONTEXT="$(kubectl config current-context 2>/dev/null || true)"
 fi
 
-tf_vars=(-var="openrouter_api_key=${OPENROUTER_API_KEY}")
+tf_vars=(
+  -var="openrouter_api_key=${OPENROUTER_API_KEY}"
+  -var="https_proxy=${HTTPS_PROXY}"
+  -var="http_proxy=${HTTP_PROXY}"
+  -var="no_proxy=${NO_PROXY}"
+)
 if [[ -n "$KUBE_CONTEXT" ]]; then
   tf_vars+=(-var="kube_context=${KUBE_CONTEXT}")
 fi

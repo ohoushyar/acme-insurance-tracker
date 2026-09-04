@@ -19,6 +19,7 @@ COPY alembic.ini ./
 COPY alembic ./alembic
 COPY scripts ./scripts
 COPY app ./app
+COPY openssl-seclevel1.cnf /app/openssl-seclevel1.cnf
 
 EXPOSE 8000
 

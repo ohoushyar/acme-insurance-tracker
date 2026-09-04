@@ -1,5 +1,3 @@
-import ssl
-
 import httpx
 import pytest
 from pydantic import ValidationError
@@ -37,15 +35,19 @@ def test_default_tls_seclevel_keeps_full_openssl_verification() -> None:
     assert openrouter_httpx_verify(_settings()) is True
 
 
-def test_seclevel_one_still_requires_trusted_certificates() -> None:
+def test_seclevel_one_still_verifies_certificates() -> None:
     from app.extraction.llm import openrouter_httpx_verify
 
-    verify = openrouter_httpx_verify(_settings(openrouter_tls_seclevel=1))
+    assert openrouter_httpx_verify(_settings(openrouter_tls_seclevel=1)) is True
 
-    assert isinstance(verify, ssl.SSLContext)
-    assert verify.verify_mode == ssl.CERT_REQUIRED
-    assert verify.check_hostname is True
-    assert verify.minimum_version == ssl.TLSVersion.TLSv1_2
+
+def test_ssl_cert_file_is_used_for_verify() -> None:
+    from app.extraction.llm import openrouter_httpx_verify
+
+    verify = openrouter_httpx_verify(
+        _settings(ssl_cert_file="/etc/ssl/certs/ca-bundle.crt")
+    )
+    assert verify == "/etc/ssl/certs/ca-bundle.crt"
 
 
 def test_tls_seclevel_must_be_1_or_2() -> None:
@@ -59,7 +61,7 @@ def test_tls_seclevel_accepts_configmap_string() -> None:
     assert settings.openrouter_tls_seclevel == 1
 
 
-def test_build_extraction_llm_wires_seclevel_one_verify(
+def test_httpx_client_kwargs_pass_proxy_and_keep_verify(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     import app.extraction.llm as llm_mod
@@ -69,22 +71,26 @@ def test_build_extraction_llm_wires_seclevel_one_verify(
     real_async = httpx.AsyncClient
 
     def wrap_client(*args: object, **kwargs: object) -> httpx.Client:
-        seen["sync"] = kwargs.get("verify", True)
+        seen["verify"] = kwargs.get("verify", True)
+        seen["proxy"] = kwargs.get("proxy")
+        seen["timeout"] = kwargs.get("timeout")
         return real_client(*args, **kwargs)
 
     def wrap_async(*args: object, **kwargs: object) -> httpx.AsyncClient:
-        seen["async"] = kwargs.get("verify", True)
-        seen["async_timeout"] = kwargs.get("timeout")
+        seen["verify"] = kwargs.get("verify", True)
+        seen["proxy"] = kwargs.get("proxy")
+        seen["timeout"] = kwargs.get("timeout")
         return real_async(*args, **kwargs)
 
     monkeypatch.setattr(llm_mod.httpx, "Client", wrap_client)
     monkeypatch.setattr(llm_mod.httpx, "AsyncClient", wrap_async)
 
-    llm_mod.build_extraction_llm(_settings(openrouter_tls_seclevel=1))
+    llm_mod.build_extraction_llm(
+        _settings(https_proxy="http://127.0.0.1:8888", openrouter_tls_seclevel=1)
+    )
 
-    assert isinstance(seen["sync"], ssl.SSLContext)
-    assert isinstance(seen["async"], ssl.SSLContext)
-    assert seen["async"].verify_mode == ssl.CERT_REQUIRED
-    timeout = seen["async_timeout"]
+    assert seen["verify"] is True
+    assert seen["proxy"] == "http://127.0.0.1:8888"
+    timeout = seen["timeout"]
     assert isinstance(timeout, httpx.Timeout)
     assert timeout.connect == 10.0

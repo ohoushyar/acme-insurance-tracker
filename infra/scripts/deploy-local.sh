@@ -8,6 +8,9 @@ TF_LOCAL="infra/terraform/local"
 API_IMAGE="${API_IMAGE:-insurance-tracker-api}"
 FRONTEND_IMAGE="${FRONTEND_IMAGE:-insurance-tracker-frontend}"
 OPENROUTER_API_KEY="${OPENROUTER_API_KEY:-}"
+HTTPS_PROXY="${HTTPS_PROXY:-}"
+HTTP_PROXY="${HTTP_PROXY:-}"
+NO_PROXY="${NO_PROXY:-127.0.0.1,localhost,::1}"
 
 command -v kubectl >/dev/null || { echo "kubectl is required" >&2; exit 1; }
 command -v terraform >/dev/null || { echo "terraform is required" >&2; exit 1; }
@@ -38,6 +41,9 @@ NAMESPACE="${NAMESPACE:-default}"
 tf_vars=(
   -var="openrouter_api_key=${OPENROUTER_API_KEY}"
   -var="kube_context=${KUBE_CONTEXT}"
+  -var="https_proxy=${HTTPS_PROXY}"
+  -var="http_proxy=${HTTP_PROXY}"
+  -var="no_proxy=${NO_PROXY}"
 )
 
 # Cluster leftovers from a previous apply (or lost local state) must be

@@ -128,11 +128,11 @@ Dramatiq: retries with backoff (max 3) for transient OpenRouter/S3
 errors; validation/empty-PDF failures are non-retryable. Actor max_age
 sized for a 35-page extract (order of minutes, not seconds).
 `ChatOpenRouter` is built with a 10s connect / 120s read HTTP timeout.
-The graph invokes the model in a worker thread under `asyncio.wait_for`
-so a blocked TLS handshake cannot freeze the Dramatiq event loop past
-120s. Timeouts mark the document failed (no silent hang). Dramatiq's
-actor time limit is 3 minutes; `TimeLimitExceeded` is not retried.
-Dramatiq still retries other transient OpenRouter/S3 errors.
+Local k8s uses `OPENSSL_CONF` (SECLEVEL=1) instead of a custom
+SSLContext so those timeouts still apply under a TLS interceptor.
+The graph invokes the model in a worker thread under `asyncio.wait_for`.
+Timeouts mark the document failed. Dramatiq's actor time limit is 3
+minutes; `TimeLimitExceeded` is not retried.
 
 Structured logs: `document_id`, `user_id`, `status`, model name —
 **not** PDF text or extracted premium/address payloads.

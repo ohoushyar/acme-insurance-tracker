@@ -13,6 +13,7 @@ from app.extraction.llm import (
     LLM_REQUEST_TIMEOUT_MS,
     LLM_TIMEOUT_MESSAGE,
     build_extraction_llm,
+    probe_openrouter,
 )
 from app.queue.broker import broker
 from app.repositories import documents as documents_repo
@@ -137,6 +138,7 @@ async def _run_extraction_job(document_id: str, user_id: str) -> None:
     if not settings.openrouter_api_key:
         raise NonRetryableExtractionError("Extraction is not configured.")
 
+    probe_openrouter(settings)
     llm = build_extraction_llm(settings)
     log.info(
         "extraction_graph_started",
