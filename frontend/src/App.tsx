@@ -5,10 +5,14 @@ import { Home } from "./pages/Home";
 import { Login } from "./pages/Login";
 import { PolicyDetail } from "./pages/PolicyDetail";
 import { PolicyEdit } from "./pages/PolicyEdit";
+import { Profile } from "./pages/Profile";
 import { Properties } from "./pages/Properties";
+import { PropertyEdit } from "./pages/PropertyEdit";
+import { PropertyNew } from "./pages/PropertyNew";
 import { Register } from "./pages/Register";
 import { Reminders } from "./pages/Reminders";
 import { Review } from "./pages/Review";
+import { Uploads } from "./pages/Uploads";
 import { RemindersProvider } from "./reminder-count";
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -23,8 +27,12 @@ export function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/uploads" element={<Uploads />} />
+      <Route path="/properties/new" element={<PropertyNew />} />
+      <Route path="/properties/:id/edit" element={<PropertyEdit />} />
       <Route path="/properties" element={<Properties />} />
       <Route path="/reminders" element={<Reminders />} />
+      <Route path="/profile" element={<Profile />} />
       <Route path="/policies/:id/edit" element={<PolicyEdit />} />
       <Route path="/policies/:id" element={<PolicyDetail />} />
       <Route path="/documents/:id/review" element={<Review />} />

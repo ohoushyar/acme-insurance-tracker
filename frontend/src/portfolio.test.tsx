@@ -144,8 +144,15 @@ describe("portfolio management", () => {
       "/properties",
     );
     expect(screen.queryByText("Cove Plaza")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/^label$/i)).not.toBeInTheDocument();
+    const addLink = screen.getByRole("link", { name: /add property/i });
+    expect(addLink).toHaveAttribute("href", "/properties/new");
 
-    await userEvent.type(screen.getByLabelText(/^label$/i), "Cove Plaza");
+    await userEvent.click(addLink);
+    await userEvent.type(
+      await screen.findByLabelText(/^label$/i),
+      "Cove Plaza",
+    );
     await userEvent.type(
       screen.getByLabelText(/^address$/i),
       "100 Harbor Cove Drive",
@@ -155,10 +162,109 @@ describe("portfolio management", () => {
       screen.getByRole("button", { name: /add property/i }),
     );
 
-    const list = await screen.findByRole("region", { name: /properties/i });
+    expect(await screen.findByText("Cove Plaza")).toBeInTheDocument();
+    const list = screen.getByRole("region", { name: /properties/i });
     expect(list).toHaveTextContent("Cove Plaza");
     expect(list).toHaveTextContent("100 Harbor Cove Drive");
     expect(list).toHaveTextContent("25000000.00");
+    expect(screen.queryByLabelText(/^label$/i)).not.toBeInTheDocument();
+  });
+
+  it("edits a property and returns to the list", async () => {
+    let property = covePlaza();
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (
+        url.endsWith("/api/v1/properties/prop-1") &&
+        init?.method === "PATCH"
+      ) {
+        const body = JSON.parse(String(init.body)) as { label: string };
+        expect(body.label).toBe("Cove Plaza North");
+        property = covePlaza({ label: "Cove Plaza North" });
+        return jsonResponse(200, property);
+      }
+      if (url.endsWith("/api/v1/properties/prop-1")) {
+        return jsonResponse(200, property);
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(200, { items: [property] });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url} ${init?.method}`);
+    });
+
+    renderAt("/properties");
+    await userEvent.click(
+      await screen.findByRole("link", { name: /edit cove plaza/i }),
+    );
+    const label = await screen.findByLabelText(/^label$/i);
+    expect(label).toHaveValue("Cove Plaza");
+    await userEvent.clear(label);
+    await userEvent.type(label, "Cove Plaza North");
+    await userEvent.click(
+      screen.getByRole("button", { name: /save property/i }),
+    );
+
+    expect(await screen.findByText("Cove Plaza North")).toBeInTheDocument();
+    const list = screen.getByRole("region", { name: /properties/i });
+    expect(list).toHaveTextContent("Cove Plaza North");
+    expect(screen.queryByLabelText(/^label$/i)).not.toBeInTheDocument();
+  });
+
+  it("does not render the property edit form until the property loads", async () => {
+    let release: (value: Response) => void = () => {};
+    const held = new Promise<Response>((resolve) => {
+      release = resolve;
+    });
+    vi.mocked(fetch).mockImplementation(async (input, init) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/properties/prop-1")) {
+        return held;
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url} ${init?.method}`);
+    });
+
+    renderAt("/properties/prop-1/edit");
+    expect(await screen.findByText("Loading…")).toBeInTheDocument();
+    expect(screen.queryByLabelText(/^label$/i)).not.toBeInTheDocument();
+
+    release(jsonResponse(200, covePlaza()));
+    expect(await screen.findByLabelText(/^label$/i)).toHaveValue("Cove Plaza");
+  });
+
+  it("does not claim there are no properties when the list fails to load", async () => {
+    vi.mocked(fetch).mockImplementation(async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/v1/auth/me")) {
+        return jsonResponse(200, owner);
+      }
+      if (url.endsWith("/api/v1/properties")) {
+        return jsonResponse(500, {
+          error: { code: "INTERNAL_ERROR", message: "Something went wrong." },
+        });
+      }
+      if (url.endsWith("/api/v1/reminders")) {
+        return jsonResponse(200, { items: [], unread_count: 0 });
+      }
+      throw new Error(`unexpected fetch ${url}`);
+    });
+
+    renderAt("/properties");
+    expect(
+      await screen.findByText("Something went wrong."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/no properties yet/i)).not.toBeInTheDocument();
   });
 
   it("attaches a property on policy edit and shows the label on Home", async () => {
@@ -464,8 +570,10 @@ describe("portfolio management", () => {
     });
 
     renderAt("/properties");
-    await screen.findByRole("heading", { name: /^properties$/i });
-    await userEvent.type(screen.getByLabelText(/^label$/i), "   ");
+    await userEvent.click(
+      await screen.findByRole("link", { name: /add property/i }),
+    );
+    await userEvent.type(await screen.findByLabelText(/^label$/i), "   ");
     await userEvent.click(
       screen.getByRole("button", { name: /add property/i }),
     );

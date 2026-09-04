@@ -149,8 +149,12 @@ describe("dashboard urgency groups", () => {
       screen.getByRole("heading", { name: /on track/i }),
     ).toBeInTheDocument();
     expect(
-      screen.getByLabelText(/drop pdfs here or choose files/i),
-    ).toBeInTheDocument();
+      screen.queryByLabelText(/drop pdfs here or choose files/i),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^uploads$/i })).toHaveAttribute(
+      "href",
+      "/uploads",
+    );
   });
 
   it("hides the stat strip when there are no policies", async () => {
@@ -176,8 +180,15 @@ describe("dashboard urgency groups", () => {
 
     renderAt("/");
     expect(
-      await screen.findByLabelText(/drop pdfs here or choose files/i),
+      await screen.findByText(/no saved policies yet/i),
     ).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /upload a pdf/i })).toHaveAttribute(
+      "href",
+      "/uploads",
+    );
+    expect(
+      screen.queryByLabelText(/drop pdfs here or choose files/i),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole("region", { name: /portfolio summary/i }),
     ).not.toBeInTheDocument();

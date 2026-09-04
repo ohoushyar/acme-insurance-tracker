@@ -136,6 +136,18 @@ input {
   margin-bottom: 8px;
 }
 
+.btn-add {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  text-decoration: none;
+  font-size: 22px;
+  line-height: 1;
+}
+
 .app-shell {
   display: flex;
   min-height: 100%;
@@ -203,6 +215,10 @@ input {
 
 .app-main h1 {
   margin-bottom: 8px;
+}
+
+.app-main .shell-header h1 {
+  margin-bottom: 0;
 }
 
 .dropzone {

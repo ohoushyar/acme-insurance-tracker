@@ -30,6 +30,16 @@ export function Shell({
             </li>
             <li>
               <Link
+                to="/uploads"
+                aria-current={
+                  location.pathname.startsWith("/uploads") ? "page" : undefined
+                }
+              >
+                Uploads
+              </Link>
+            </li>
+            <li>
+              <Link
                 to="/properties"
                 aria-current={
                   location.pathname.startsWith("/properties")
@@ -54,6 +64,16 @@ export function Shell({
                 {unreadCount > 0 ? (
                   <span className="nav-count">{unreadCount}</span>
                 ) : null}
+              </Link>
+            </li>
+            <li>
+              <Link
+                to="/profile"
+                aria-current={
+                  location.pathname.startsWith("/profile") ? "page" : undefined
+                }
+              >
+                Profile
               </Link>
             </li>
           </ul>

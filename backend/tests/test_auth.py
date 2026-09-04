@@ -160,3 +160,91 @@ async def test_validation_error_shape(client: AsyncClient) -> None:
     body = response.json()
     assert body["error"]["code"] == "VALIDATION_ERROR"
     assert "message" in body["error"]
+
+
+async def test_change_password_then_login_with_new(client: AsyncClient) -> None:
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "owner@example.com", "password": "correct-horse"},
+    )
+    changed = await client.post(
+        "/api/v1/auth/password",
+        json={"current_password": "correct-horse", "new_password": "new-horse-1"},
+    )
+    assert changed.status_code == 204
+    assert "password" not in changed.text
+    assert "password_hash" not in changed.text
+
+    old = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "owner@example.com", "password": "correct-horse"},
+    )
+    assert old.status_code == 401
+
+    new = await client.post(
+        "/api/v1/auth/login",
+        json={"email": "owner@example.com", "password": "new-horse-1"},
+    )
+    assert new.status_code == 200
+    assert "password" not in new.json()
+    assert "password_hash" not in new.json()
+
+
+async def test_change_password_wrong_current_returns_401(
+    client: AsyncClient,
+) -> None:
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "owner@example.com", "password": "correct-horse"},
+    )
+    response = await client.post(
+        "/api/v1/auth/password",
+        json={"current_password": "wrong-password", "new_password": "new-horse-1"},
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "INVALID_CREDENTIALS"
+    assert response.json()["error"]["message"] == "Current password is incorrect."
+
+
+async def test_change_password_requires_cookie(client: AsyncClient) -> None:
+    response = await client.post(
+        "/api/v1/auth/password",
+        json={"current_password": "correct-horse", "new_password": "new-horse-1"},
+    )
+    assert response.status_code == 401
+    assert response.json()["error"]["code"] == "UNAUTHENTICATED"
+
+
+async def test_change_password_short_new_returns_422(client: AsyncClient) -> None:
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "owner@example.com", "password": "correct-horse"},
+    )
+    response = await client.post(
+        "/api/v1/auth/password",
+        json={"current_password": "correct-horse", "new_password": "short"},
+    )
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+
+
+async def test_changed_password_is_stored_as_argon2(client: AsyncClient) -> None:
+    await client.post(
+        "/api/v1/auth/register",
+        json={"email": "owner@example.com", "password": "correct-horse"},
+    )
+    await client.post(
+        "/api/v1/auth/password",
+        json={"current_password": "correct-horse", "new_password": "new-horse-1"},
+    )
+    engine = create_async_engine(get_settings().database_url)
+    async with engine.connect() as conn:
+        hashed = (
+            await conn.execute(
+                text("SELECT password_hash FROM users WHERE email = :email"),
+                {"email": "owner@example.com"},
+            )
+        ).scalar_one()
+    await engine.dispose()
+    assert hashed.startswith("$argon2")
+    PasswordHasher().verify(hashed, "new-horse-1")
