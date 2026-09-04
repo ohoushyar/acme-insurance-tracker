@@ -45,3 +45,40 @@ def test_routers_do_not_import_sqlalchemy_query_apis() -> None:
         for call in _session_mutations(path):
             violations.append(f"{path.name}: {call}")
     assert violations == []
+
+
+def test_services_and_queue_do_not_inline_select() -> None:
+    app_root = Path(__file__).resolve().parents[1] / "app"
+    violations: list[str] = []
+    for directory in (app_root / "services", app_root / "queue"):
+        for path in sorted(directory.rglob("*.py")):
+            tree = ast.parse(path.read_text(), filename=str(path))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.ImportFrom)
+                    and node.module
+                    and (
+                        node.module == "sqlalchemy"
+                        or node.module.startswith("sqlalchemy.")
+                    )
+                ):
+                    for alias in node.names:
+                        if alias.name in {"select", "delete", "update", "insert"}:
+                            violations.append(
+                                f"{path.relative_to(app_root)}: {alias.name}"
+                            )
+                if not isinstance(node, ast.Call):
+                    continue
+                func = node.func
+                if isinstance(func, ast.Name) and func.id == "select":
+                    violations.append(f"{path.relative_to(app_root)}: select()")
+                if (
+                    isinstance(func, ast.Attribute)
+                    and func.attr == "select"
+                    and isinstance(func.value, ast.Name)
+                    and func.value.id == "sqlalchemy"
+                ):
+                    violations.append(
+                        f"{path.relative_to(app_root)}: sqlalchemy.select()"
+                    )
+    assert violations == []
