@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     https_proxy: str = ""
     http_proxy: str = ""
     ssl_cert_file: str = ""
+    email_backend: str = ""
+    email_from: str = ""
+    app_public_url: str = "http://localhost:5173"
+    smtp_host: str = ""
+    smtp_port: Annotated[int, BeforeValidator(parse_int_like)] = 1025
+    smtp_username: str = ""
+    smtp_password: str = ""
+    smtp_starttls: bool = False
 
 
 @lru_cache

@@ -13,3 +13,9 @@ data:
   S3_BUCKET: insurance-docs
   S3_REGION: us-east-1
   OPENROUTER_MODEL: openai/gpt-4o-mini
+  EMAIL_BACKEND: smtp
+  EMAIL_FROM: noreply@localhost
+  SMTP_HOST: mailpit
+  SMTP_PORT: "1025"
+  SMTP_STARTTLS: "false"
+  APP_PUBLIC_URL: http://localhost:8080

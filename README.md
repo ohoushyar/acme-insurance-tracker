@@ -1,7 +1,8 @@
 # Insurance Tracker
 
-CRE insurance renewal tracker. See [docs/plans/](docs/plans/) for the
-build-order writeups. Cluster deploy is documented in
+CRE insurance renewal tracker. How the pieces fit together:
+[docs/architecture.md](docs/architecture.md). Build-order writeups live
+in [docs/plans/](docs/plans/). Cluster deploy is documented in
 [docs/plans/10-deployment.md](docs/plans/10-deployment.md).
 
 ## Prerequisites
@@ -18,12 +19,12 @@ the AWS CLI (production).
 
 ## Local development
 
-Copy environment defaults and start Postgres, Redis, and MinIO:
+Copy environment defaults and start Postgres, Redis, MinIO, and Mailpit:
 
 ```bash
 cp .env.example .env
 # Set OPENROUTER_API_KEY in .env for live extraction.
-docker compose up -d postgres redis minio minio-init
+docker compose up -d postgres redis minio minio-init mailpit
 ```
 
 Apply migrations (uses `ADMIN_DATABASE_URL` from `.env`):
@@ -53,6 +54,13 @@ npm run dev
 
 Open http://localhost:5173. Vite proxies `/api` to the API on port 8000 so the
 session cookie stays first-party.
+
+Mailpit (local SMTP inbox) is at http://localhost:8025. Register and password
+reset enqueue Dramatiq jobs; the worker sends mail. Verify the address before
+renewal reminder emails go out. Staging/production use Amazon SES (IRSA) instead
+of Mailpit — set `ses_from_address` and `app_public_url` in the app tfvars, add
+the DKIM records Terraform outputs, and request SES production access (leaving
+the sandbox is not automated).
 
 ## Demo accounts (local only)
 
@@ -114,8 +122,11 @@ docker compose up --build
 The frontend image is nginx + a Vite production build. It proxies `/api` to the
 `api` service. Vite is not in the production path.
 
-Compose also runs MinIO (S3-compatible PDF store) and a Dramatiq worker on
-Redis DB 2. Set `OPENROUTER_API_KEY` in the environment for live extraction.
+Compose also runs MinIO (S3-compatible PDF store), Mailpit, and a Dramatiq
+worker on Redis DB 2. Set `OPENROUTER_API_KEY` in the environment for live
+extraction. The worker also sends verification, password-reset, and renewal
+emails. An hourly `scan_reminder_emails` actor re-enqueues itself; it does not
+use a Kubernetes CronJob.
 
 ## Local Kubernetes
 

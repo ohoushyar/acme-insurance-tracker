@@ -95,6 +95,12 @@ locals {
       ADMIN_DATABASE_URL      = local.admin_database_url
       REDIS_URL               = "redis://127.0.0.1:6379/0"
       DRAMATIQ_REDIS_URL      = "redis://127.0.0.1:6379/2"
+      EMAIL_BACKEND           = "smtp"
+      EMAIL_FROM              = "noreply@localhost"
+      SMTP_HOST               = "127.0.0.1"
+      SMTP_PORT               = "1025"
+      SMTP_STARTTLS           = "false"
+      APP_PUBLIC_URL          = "http://localhost:8080"
     },
     var.https_proxy != "" ? { HTTPS_PROXY = var.https_proxy } : {},
     var.http_proxy != "" ? { HTTP_PROXY = var.http_proxy } : {},

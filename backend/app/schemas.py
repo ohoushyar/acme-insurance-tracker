@@ -40,6 +40,28 @@ class UserOut(BaseModel):
     id: uuid.UUID
     email: str
     created_at: datetime
+    email_verified_at: datetime | None = None
+
+
+class EmailTokenIn(BaseModel):
+    token: str = Field(min_length=1)
+
+
+class ForgotPasswordIn(BaseModel):
+    email: str
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        email = value.strip().lower()
+        if not EMAIL_RE.match(email):
+            raise ValueError("must be a valid email address")
+        return email
+
+
+class ResetPasswordIn(BaseModel):
+    token: str = Field(min_length=1)
+    password: str = Field(min_length=8)
 
 
 class PropertyOut(BaseModel):

@@ -32,7 +32,7 @@ async def _policy_map(
     return {policy.id: policy for policy in policies if policy.id in wanted}
 
 
-async def _sync_due_rows(session: AsyncSession, user_id: UUID, today: date) -> None:
+async def sync_due_rows(session: AsyncSession, user_id: UUID, today: date) -> None:
     policies = await policies_repo.list_for_user(session, user_id)
     existing = await reminders_repo.list_for_user(session, user_id)
     seen = {
@@ -59,7 +59,7 @@ async def _sync_due_rows(session: AsyncSession, user_id: UUID, today: date) -> N
 
 
 async def list_reminders(session: AsyncSession, user_id: UUID) -> ReminderList:
-    await _sync_due_rows(session, user_id, utc_today())
+    await sync_due_rows(session, user_id, utc_today())
     items = await reminders_repo.list_for_user(session, user_id)
     policies = await _policy_map(session, user_id, items)
     return ReminderList(

@@ -16,12 +16,13 @@ from app.extraction.llm import (
     probe_openrouter,
 )
 from app.queue.broker import broker
+from app.queue.email import scan_reminder_emails, send_auth_email, send_reminder_email
 from app.repositories import documents as documents_repo
 from app.storage import StorageKeyError, assert_owned_storage_key, build_document_store
 
 log = structlog.get_logger("extraction")
 
-_ = broker
+_ = (broker, scan_reminder_emails, send_auth_email, send_reminder_email)
 
 MAX_RETRIES = 3
 EXTRACT_TIME_LIMIT_MS = 3 * 60 * 1000

@@ -219,7 +219,12 @@ async def _seed_user(
 ) -> None:
     email = user_data["email"].strip().lower()
     named_insured = user_data["named_insured"]
-    user = User(id=uuid4(), email=email, password_hash=password_hash)
+    user = User(
+        id=uuid4(),
+        email=email,
+        password_hash=password_hash,
+        email_verified_at=datetime.now(UTC),
+    )
     session.add(user)
     await session.flush()
 

@@ -20,6 +20,8 @@ type AuthContextValue = {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  setUser: (user: User | null) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -35,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!cancelled) setUser(current);
       })
       .catch(() => {
-        if (!cancelled) setUser(null);
+        // Keep whatever user was already set (e.g. verify-email finishing
+        // before this boot request returns 401).
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -60,8 +63,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refreshUser(): Promise<void> {
+    const current = await getMe();
+    setUser(current);
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        login,
+        register,
+        logout,
+        refreshUser,
+        setUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

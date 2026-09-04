@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
@@ -33,8 +34,23 @@ async def create(session: AsyncSession, email: str, password_hash: str) -> User:
     return user
 
 
+async def list_verified(session: AsyncSession) -> list[User]:
+    result = await session.execute(
+        select(User)
+        .where(User.email_verified_at.is_not(None))
+        .order_by(User.created_at)
+    )
+    return list(result.scalars().all())
+
+
 async def set_password_hash(
     session: AsyncSession, user: User, password_hash: str
 ) -> None:
     user.password_hash = password_hash
     await session.flush()
+
+
+async def mark_email_verified(session: AsyncSession, user: User) -> None:
+    if user.email_verified_at is None:
+        user.email_verified_at = datetime.now(UTC)
+        await session.flush()

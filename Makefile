@@ -6,7 +6,7 @@ SHELL := /bin/bash
 
 COMPOSE := docker compose
 TEST_DEPS := postgres redis
-SERVE_DEPS := postgres redis minio
+SERVE_DEPS := postgres redis minio mailpit
 NPM_INSTALL := npm install --no-audit --no-fund
 
 TF_LOCAL := infra/terraform/local

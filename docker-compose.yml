@@ -51,6 +51,12 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: openai/gpt-4o-mini
       OPENROUTER_TLS_SECLEVEL: "1"
+      EMAIL_BACKEND: smtp
+      EMAIL_FROM: noreply@localhost
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_STARTTLS: "false"
+      APP_PUBLIC_URL: http://localhost:8080
     ports:
       - "8000:8000"
     depends_on:
@@ -81,6 +87,12 @@ services:
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: openai/gpt-4o-mini
       OPENROUTER_TLS_SECLEVEL: "1"
+      EMAIL_BACKEND: smtp
+      EMAIL_FROM: noreply@localhost
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_STARTTLS: "false"
+      APP_PUBLIC_URL: http://localhost:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -88,6 +100,8 @@ services:
         condition: service_healthy
       minio-init:
         condition: service_completed_successfully
+      mailpit:
+        condition: service_started
 
   minio:
     image: minio/minio:latest
@@ -131,6 +145,12 @@ services:
       - "8080:80"
     depends_on:
       - api
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "1025:1025"
+      - "8025:8025"
 
 volumes:
   postgres_data:

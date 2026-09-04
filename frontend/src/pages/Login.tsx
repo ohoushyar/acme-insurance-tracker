@@ -60,6 +60,9 @@ export function Login() {
           </button>
         </form>
         <p className="muted">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
+        <p className="muted">
           Need an account? <Link to="/register">Create one</Link>
         </p>
       </div>

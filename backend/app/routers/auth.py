@@ -8,7 +8,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import Settings, get_settings
 from app.deps import get_current_user, get_db, get_redis
 from app.models import User
-from app.schemas import ChangePassword, Credentials, UserOut
+from app.schemas import (
+    ChangePassword,
+    Credentials,
+    EmailTokenIn,
+    ForgotPasswordIn,
+    ResetPasswordIn,
+    UserOut,
+)
 from app.services import auth as auth_service
 from app.sessions import delete_session, new_session_token, store_session
 
@@ -56,6 +63,10 @@ async def register(
 ) -> User:
     user = await auth_service.register(session, body.email, body.password)
     await _issue_session(response, redis, settings, user)
+    try:
+        await auth_service.enqueue_verification(session, redis, user.id)
+    except Exception:  # noqa: BLE001
+        log.info("verify_email_enqueue_failed", user_id=str(user.id))
     log.info("user_registered", user_id=str(user.id))
     return user
 
@@ -89,8 +100,11 @@ async def logout(
 
 
 @router.get("/me", response_model=UserOut)
-async def me(user: Annotated[UserOut, Depends(get_current_user)]) -> UserOut:
-    return user
+async def me(
+    user: Annotated[UserOut, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    return await auth_service.get_user(session, user.id)
 
 
 @router.post("/password", status_code=204)
@@ -102,4 +116,45 @@ async def change_password(
     await auth_service.change_password(
         session, user.id, body.current_password, body.new_password
     )
+    return Response(status_code=204)
+
+
+@router.post("/resend-verification", status_code=204)
+async def resend_verification(
+    user: Annotated[UserOut, Depends(get_current_user)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> Response:
+    await auth_service.enqueue_verification(
+        session, redis, user.id, require_cooldown=True
+    )
+    return Response(status_code=204)
+
+
+@router.post("/verify-email", response_model=UserOut)
+async def verify_email(
+    body: EmailTokenIn,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> User:
+    return await auth_service.verify_email(session, redis, body.token)
+
+
+@router.post("/forgot-password", status_code=204)
+async def forgot_password(
+    body: ForgotPasswordIn,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> Response:
+    await auth_service.enqueue_password_reset(session, redis, body.email)
+    return Response(status_code=204)
+
+
+@router.post("/reset-password", status_code=204)
+async def reset_password(
+    body: ResetPasswordIn,
+    session: Annotated[AsyncSession, Depends(get_db)],
+    redis: Annotated[Redis, Depends(get_redis)],
+) -> Response:
+    await auth_service.reset_password(session, redis, body.token, body.password)
     return Response(status_code=204)

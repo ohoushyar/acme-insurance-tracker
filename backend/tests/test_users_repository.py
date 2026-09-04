@@ -6,6 +6,8 @@ from app.repositories.users import (
     create,
     get_by_email,
     get_by_id,
+    list_verified,
+    mark_email_verified,
     set_password_hash,
 )
 from app.security import hash_password, verify_password
@@ -54,3 +56,17 @@ async def test_set_password_hash_updates_stored_hash(
     assert found is not None
     assert verify_password(found.password_hash, "new-horse-1")
     assert not verify_password(found.password_hash, "correct-horse")
+
+
+async def test_list_verified_excludes_unverified(db_session: AsyncSession) -> None:
+    unverified = await create(
+        db_session, "unverified@example.com", hash_password("correct-horse")
+    )
+    verified = await create(
+        db_session, "verified@example.com", hash_password("correct-horse")
+    )
+    await mark_email_verified(db_session, verified)
+    found = await list_verified(db_session)
+    ids = {user.id for user in found}
+    assert verified.id in ids
+    assert unverified.id not in ids

@@ -32,6 +32,9 @@ resource "kubernetes_config_map_v1" "app" {
     OPENROUTER_MODEL      = var.openrouter_model
     REDIS_URL             = "redis://redis:6379/0"
     DRAMATIQ_REDIS_URL    = "redis://redis:6379/2"
+    EMAIL_BACKEND         = var.ses_from_address != "" ? "ses" : ""
+    EMAIL_FROM            = var.ses_from_address
+    APP_PUBLIC_URL        = var.app_public_url
   }
 }
 

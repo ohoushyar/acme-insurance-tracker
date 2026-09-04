@@ -213,6 +213,22 @@ input {
   max-width: 720px;
 }
 
+.verify-banner {
+  margin: 0 0 24px;
+  padding: 12px 14px;
+  border: 1px solid var(--rule);
+  background: #fff;
+}
+
+.verify-banner p {
+  margin: 0;
+}
+
+.verify-banner .btn-quiet {
+  margin-left: 12px;
+  display: inline;
+}
+
 .app-main h1 {
   margin-bottom: 8px;
 }
