@@ -432,5 +432,9 @@ resource "kubernetes_ingress_v1" "api" {
       }
     }
   }
+  wait_for_load_balancer = true
+  timeouts {
+    create = "10m"
+  }
   depends_on = [kubernetes_deployment_v1.api]
 }

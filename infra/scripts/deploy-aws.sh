@@ -39,8 +39,16 @@ terraform -chdir="$TF_PLATFORM" apply -auto-approve \
 ECR_URL="$(terraform -chdir="$TF_PLATFORM" output -raw ecr_repository_url)"
 aws ecr get-login-password --region "$AWS_REGION" \
   | docker login --username AWS --password-stdin "$ECR_URL"
-docker build -t "${ECR_URL}:${IMAGE_TAG}" ./backend
-docker push "${ECR_URL}:${IMAGE_TAG}"
+# EKS nodes are t3.medium (linux/amd64). A native docker build on
+# Apple Silicon publishes linux/arm64, which kubelet cannot pull.
+# Provenance attestations create an OCI index that some containerd
+# versions also reject with "no match for platform in manifest".
+docker buildx build \
+  --platform linux/amd64 \
+  --provenance=false \
+  --push \
+  -t "${ECR_URL}:${IMAGE_TAG}" \
+  ./backend
 
 terraform -chdir="$TF_APP" init -input=false
 terraform -chdir="$TF_APP" workspace select "$ENV" || terraform -chdir="$TF_APP" workspace new "$ENV"

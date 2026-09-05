@@ -11,15 +11,10 @@ data "aws_cloudfront_origin_request_policy" "all_viewer" {
 }
 
 locals {
-  alb_hostname = try(
-    kubernetes_ingress_v1.api.status[0].load_balancer[0].ingress[0].hostname,
-    "",
-  )
+  alb_hostname = kubernetes_ingress_v1.api.status[0].load_balancer[0].ingress[0].hostname
 }
 
 resource "aws_cloudfront_distribution" "this" {
-  count = local.alb_hostname == "" ? 0 : 1
-
   enabled             = true
   is_ipv6_enabled     = true
   comment             = local.name_prefix

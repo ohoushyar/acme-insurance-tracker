@@ -50,7 +50,6 @@ resource "aws_cloudfront_origin_access_control" "web" {
 }
 
 data "aws_iam_policy_document" "web_oac" {
-  count = length(aws_cloudfront_distribution.this)
   statement {
     principals {
       type        = "Service"
@@ -61,13 +60,12 @@ data "aws_iam_policy_document" "web_oac" {
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.this[0].arn]
+      values   = [aws_cloudfront_distribution.this.arn]
     }
   }
 }
 
 resource "aws_s3_bucket_policy" "web" {
-  count  = length(aws_cloudfront_distribution.this)
   bucket = aws_s3_bucket.web.id
-  policy = data.aws_iam_policy_document.web_oac[0].json
+  policy = data.aws_iam_policy_document.web_oac.json
 }
